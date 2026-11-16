@@ -8,7 +8,7 @@ import { TopBar } from '@/components/archive/TopBar'
 import { NotificationTray } from '@/components/entity/NotificationTray'
 import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
-import { selectProgress, selectRank } from '@/store/selectors'
+import { selectProgress, selectRank, selectUnlockedSections } from '@/store/selectors'
 import { CASE_001 } from '@/data/case001'
 
 // ── Candle SVG with flicker ───────────────────────────────────────────────
@@ -58,6 +58,7 @@ export default function HQPage() {
 
   const progress = selectProgress(state, CASE_001)
   const { rank, title: rankTitle } = selectRank(progress)
+  const unlockedSections = selectUnlockedSections(state)
 
   // Key evidence — most recent 6, by collection timestamp
   const keyEvidence = Object.entries(collectedEvidence)
@@ -99,6 +100,7 @@ export default function HQPage() {
         investigatorName={investigator.name}
         rankTitle={rankTitle}
         rankNumber={rank}
+        unlockedSections={unlockedSections}
       />
 
       <main className="max-w-6xl mx-auto px-6 py-10 flex flex-col lg:flex-row gap-8">
