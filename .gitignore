@@ -1,0 +1,24 @@
+# env — never commit secrets
+.env*
+!.env.example
+
+# dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# test coverage
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# local overrides
+*.local
+
+# editor
+.vscode/
+.idea/

@@ -1,0 +1,27 @@
+:root {
+  /* ── Backgrounds ─────────────────────────────────────────────────── */
+  --obsidian:        #171419;
+  --ink:             #0E0C10;
+
+  /* ── Panels & frames ─────────────────────────────────────────────── */
+  --burgundy:        #421D29;
+
+  /* ── Document surfaces ───────────────────────────────────────────── */
+  --parchment:       #D8C8AC;
+  --parchment-light: #EADFC9;
+  --parchment-dark:  #B9A98C;
+
+  /* ── Accents ─────────────────────────────────────────────────────── */
+  --gold:            #A58A60;
+  --brown:           #51413D;
+  --candle:          #E8B15D;
+  --thread:          #B5483A;
+  --verdigris:       #5F7F6B;
+
+  /* ── Entity — reserved for entity events only ────────────────────── */
+  --entity:          #8F1D2C;
+  --entity-glow:     #C0283D;
+
+  /* ── Horror intensity (driven by entity stage) ───────────────────── */
+  --haunt-level:     0;
+}

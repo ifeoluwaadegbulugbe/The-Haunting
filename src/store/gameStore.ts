@@ -1,0 +1,304 @@
+import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import type { GameState, Theory } from '@/types'
+import { migrateState } from './migrations'
+
+// ── Initial state ──────────────────────────────────────────────────────────
+
+export const INITIAL_STATE: GameState = {
+  version: 1,
+  investigator: { name: '', startedAt: 0 },
+  discoveredObjects: [],
+  inspectedObjects: [],
+  collectedEvidence: {},
+  recoveredRecords: [],
+  witnessChats: {},
+  witnessTrust: {},
+  revealedFacts: [],
+  presentedEvidence: {},
+  contradictionsFlagged: [],
+  links: [],
+  boardPositions: {},
+  timelinePlacement: {},
+  entity: {
+    attention: 0,
+    stage: 0,
+    firedRules: [],
+    disturbed: [],
+    lockedObjects: [],
+    messages: [],
+  },
+  theory: undefined,
+  verdict: undefined,
+  ui: {
+    lastRoute: '',
+    muted: true,
+    seenIntro: false,
+  },
+}
+
+// ── Store definition ───────────────────────────────────────────────────────
+
+interface GameStore extends GameState {
+  // Investigation
+  startInvestigation: (name: string) => void
+  discoverObject: (id: string) => void
+  inspectObject: (id: string) => void
+  collectEvidence: (id: string) => void
+
+  // Digital Archives
+  recoverRecord: (id: string) => void
+
+  // Witness
+  addChatTurn: (witnessId: string, turn: { role: 'player' | 'witness'; text: string; at: number }) => void
+  setTrust: (witnessId: string, value: number) => void
+  revealFact: (factId: string) => void
+  markEvidencePresented: (witnessId: string, evidenceId: string) => void
+
+  // Board
+  addLink: (a: string, b: string, verdict: 'valid' | 'invalid' | 'contradiction') => void
+  setCardPosition: (id: string, pos: { x: number; y: number }) => void
+  placeTimelineEvent: (slot: string, eventId: string) => void
+  flagContradiction: (id: string) => void
+
+  // Entity
+  addAttention: (delta: number) => void
+  fireRule: (ruleId: string) => void
+  disturbEvidence: (id: string) => void
+  lockObject: (id: string) => void
+  unlockObject: (id: string) => void
+  addEntityMessage: (msg: { id: string; text: string; at: number }) => void
+  plantEvidence: (id: string) => void
+
+  // Theory & verdict
+  setTheory: (theory: Theory) => void
+  setVerdict: (verdict: { score: number; breakdown: Record<string, number>; rank: string }) => void
+
+  // UI
+  setLastRoute: (route: string) => void
+  toggleMute: () => void
+  markIntroSeen: () => void
+
+  // Meta
+  resetStore: () => void
+}
+
+export const useGameStore = create<GameStore>()(
+  persist(
+    (set) => ({
+      ...INITIAL_STATE,
+
+      // ── Investigation ──────────────────────────────────────────────────
+      startInvestigation: (name) =>
+        set({ investigator: { name, startedAt: Date.now() } }),
+
+      discoverObject: (id) =>
+        set((s) =>
+          s.discoveredObjects.includes(id)
+            ? {}
+            : { discoveredObjects: [...s.discoveredObjects, id] }
+        ),
+
+      inspectObject: (id) =>
+        set((s) =>
+          s.inspectedObjects.includes(id)
+            ? {}
+            : { inspectedObjects: [...s.inspectedObjects, id] }
+        ),
+
+      collectEvidence: (id) =>
+        set((s) =>
+          s.collectedEvidence[id]
+            ? {}
+            : {
+              collectedEvidence: {
+                ...s.collectedEvidence,
+                [id]: { at: Date.now(), flags: [] },
+              },
+            }
+        ),
+
+      // ── Digital ───────────────────────────────────────────────────────
+      recoverRecord: (id) =>
+        set((s) =>
+          s.recoveredRecords.includes(id)
+            ? {}
+            : { recoveredRecords: [...s.recoveredRecords, id] }
+        ),
+
+      // ── Witness ───────────────────────────────────────────────────────
+      addChatTurn: (witnessId, turn) =>
+        set((s) => ({
+          witnessChats: {
+            ...s.witnessChats,
+            [witnessId]: [...(s.witnessChats[witnessId] ?? []), turn],
+          },
+        })),
+
+      setTrust: (witnessId, value) =>
+        set((s) => ({
+          witnessTrust: {
+            ...s.witnessTrust,
+            [witnessId]: Math.min(100, Math.max(0, value)),
+          },
+        })),
+
+      revealFact: (factId) =>
+        set((s) =>
+          s.revealedFacts.includes(factId)
+            ? {}
+            : { revealedFacts: [...s.revealedFacts, factId] }
+        ),
+
+      markEvidencePresented: (witnessId, evidenceId) =>
+        set((s) => ({
+          presentedEvidence: {
+            ...s.presentedEvidence,
+            [witnessId]: [...(s.presentedEvidence[witnessId] ?? []), evidenceId],
+          },
+        })),
+
+      // ── Board ─────────────────────────────────────────────────────────
+      addLink: (a, b, verdict) =>
+        set((s) => {
+          const exists = s.links.some(
+            (l) => (l.a === a && l.b === b) || (l.a === b && l.b === a)
+          )
+          if (exists) return {}
+          return { links: [...s.links, { a, b, verdict }] }
+        }),
+
+      setCardPosition: (id, pos) =>
+        set((s) => ({
+          boardPositions: { ...s.boardPositions, [id]: pos },
+        })),
+
+      placeTimelineEvent: (slot, eventId) =>
+        set((s) => ({
+          timelinePlacement: { ...s.timelinePlacement, [slot]: eventId },
+        })),
+
+      flagContradiction: (id) =>
+        set((s) =>
+          s.contradictionsFlagged.includes(id)
+            ? {}
+            : { contradictionsFlagged: [...s.contradictionsFlagged, id] }
+        ),
+
+      // ── Entity ────────────────────────────────────────────────────────
+      addAttention: (delta) =>
+        set((s) => {
+          const raw = s.entity.attention + delta
+          // Cap at 99 until verdict is submitted
+          const capped = s.verdict ? Math.min(99, Math.max(0, raw)) : Math.min(99, Math.max(0, raw))
+          const stage = attentionToStage(capped)
+          return {
+            entity: { ...s.entity, attention: capped, stage },
+          }
+        }),
+
+      fireRule: (ruleId) =>
+        set((s) =>
+          s.entity.firedRules.includes(ruleId)
+            ? {}
+            : { entity: { ...s.entity, firedRules: [...s.entity.firedRules, ruleId] } }
+        ),
+
+      disturbEvidence: (id) =>
+        set((s) =>
+          s.entity.disturbed.includes(id)
+            ? {}
+            : { entity: { ...s.entity, disturbed: [...s.entity.disturbed, id] } }
+        ),
+
+      lockObject: (id) =>
+        set((s) =>
+          s.entity.lockedObjects.includes(id)
+            ? {}
+            : { entity: { ...s.entity, lockedObjects: [...s.entity.lockedObjects, id] } }
+        ),
+
+      unlockObject: (id) =>
+        set((s) => ({
+          entity: {
+            ...s.entity,
+            lockedObjects: s.entity.lockedObjects.filter((o) => o !== id),
+          },
+        })),
+
+      addEntityMessage: (msg) =>
+        set((s) => ({
+          entity: { ...s.entity, messages: [...s.entity.messages, msg] },
+        })),
+
+      plantEvidence: (id) =>
+        set((s) =>
+          s.collectedEvidence[id]
+            ? {}
+            : {
+              collectedEvidence: {
+                ...s.collectedEvidence,
+                [id]: { at: Date.now(), flags: ['entity-planted'] },
+              },
+            }
+        ),
+
+      // ── Theory & verdict ───────────────────────────────────────────────
+      setTheory: (theory) => set({ theory }),
+
+      setVerdict: (verdict) =>
+        set((s) => ({
+          verdict,
+          entity: { ...s.entity, stage: 4 },
+        })),
+
+      // ── UI ─────────────────────────────────────────────────────────────
+      setLastRoute: (route) =>
+        set((s) => ({ ui: { ...s.ui, lastRoute: route } })),
+
+      toggleMute: () =>
+        set((s) => ({ ui: { ...s.ui, muted: !s.ui.muted } })),
+
+      markIntroSeen: () =>
+        set((s) => ({ ui: { ...s.ui, seenIntro: true } })),
+
+      // ── Meta ───────────────────────────────────────────────────────────
+      resetStore: () => set({ ...INITIAL_STATE }),
+    }),
+    {
+      name: 'haunting-save-v1',
+      storage: createJSONStorage(() => {
+        // Guard against SSR and test environments where localStorage may be undefined
+        if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
+          return {
+            getItem: () => null,
+            setItem: () => undefined,
+            removeItem: () => undefined,
+          }
+        }
+        return window.localStorage
+      }),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.warn('[store] rehydration error:', error)
+          return
+        }
+        if (!state) return
+        const migrated = migrateState(state)
+        if (!migrated) {
+          // Version mismatch — reset
+          state.resetStore()
+        }
+      },
+    }
+  )
+)
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function attentionToStage(attention: number): 0 | 1 | 2 | 3 | 4 {
+  if (attention >= 70) return 3
+  if (attention >= 40) return 2
+  if (attention >= 15) return 1
+  return 0
+}
