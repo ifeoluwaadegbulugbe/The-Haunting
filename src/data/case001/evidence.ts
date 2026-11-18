@@ -32,7 +32,7 @@ export const EVIDENCE_ITEMS: Evidence[] = [
     relevance: 'supporting',
     relatedCharacters: ['edmund', 'clara', 'lily', 'julian'],
     relatedEvents: ['TL-02'],
-    assetPath: '/assets/evidence/photo-family-torn.png',
+    assetPath: '/assets/evidence/photo-family-torn.jpg',
   },
   {
     id: 'EV-03',
@@ -80,7 +80,7 @@ export const EVIDENCE_ITEMS: Evidence[] = [
     relevance: 'core',
     relatedCharacters: ['julian', 'lily'],
     relatedEvents: ['TL-02'],
-    assetPath: '/assets/evidence/photo-strip.png',
+    assetPath: '/assets/evidence/photo-strip.jpg',
   },
   {
     id: 'EV-06',
@@ -142,7 +142,7 @@ export const EVIDENCE_ITEMS: Evidence[] = [
     relevance: 'supporting',
     relatedCharacters: ['lily'],
     relatedEvents: ['TL-05'],
-    assetPath: '/assets/evidence/drawing-lily.png',
+    assetPath: '/assets/evidence/drawing-lily.jpg',
   },
   {
     id: 'EV-10',
@@ -221,7 +221,7 @@ export const EVIDENCE_ITEMS: Evidence[] = [
     relevance: 'core',
     relatedCharacters: ['julian'],
     relatedEvents: ['TL-02'],
-    assetPath: '/assets/evidence/photo-car-drive.png',
+    assetPath: '/assets/evidence/photo-car-drive.jpg',
   },
   {
     id: 'EV-15',
@@ -254,7 +254,7 @@ export const EVIDENCE_ITEMS: Evidence[] = [
     relatedCharacters: ['dorothea'],
     relatedEvents: [],
     refutedBy: ['EV-08'],
-    assetPath: '/assets/evidence/photo-window-disturbed.png',
+    assetPath: '/assets/evidence/photo-window-disturbed.jpg',
   },
 ]
 

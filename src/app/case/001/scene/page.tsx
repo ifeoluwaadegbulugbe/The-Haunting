@@ -109,7 +109,7 @@ export default function ScenePage() {
     <div className="relative w-full h-dvh overflow-hidden bg-obsidian">
       {/* Scene background */}
       <Image
-        src="/assets/scene/study-scene.png"
+        src="/assets/scene/study-scene.jpg"
         alt="Ashworth House study"
         fill
         priority

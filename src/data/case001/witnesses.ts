@@ -8,7 +8,7 @@ export const WITNESSES: Witness[] = [
     id: 'margaret',
     name: 'Margaret Hale',
     role: 'Neighbour',
-    portrait: '/assets/portraits/portrait-margaret.png',
+    portrait: '/assets/portraits/portrait-margaret.jpg',
     background:
       'Retired schoolteacher. Has lived on Hollow Lane for thirty years, ' +
       '400 metres from Ashworth House. Knew the family well.',
@@ -127,7 +127,7 @@ export const WITNESSES: Witness[] = [
     id: 'dorothea',
     name: 'Dorothea Pryce',
     role: 'Former Housekeeper',
-    portrait: '/assets/portraits/portrait-dorothea.png',
+    portrait: '/assets/portraits/portrait-dorothea.jpg',
     background:
       'Worked for the Ashworth family for nine years. Left the house at 16:55 ' +
       'on 11 November 2008 and was paid by Julian to give false information to police.',
@@ -229,7 +229,7 @@ export const WITNESSES: Witness[] = [
     id: 'julian',
     name: 'Julian Ashworth',
     role: 'Family Relative',
-    portrait: '/assets/portraits/portrait-julian.png',
+    portrait: '/assets/portraits/portrait-julian.jpg',
     background:
       "Edmund's cousin. Deep in debt. Arrived at Ashworth House on the night of " +
       '11 November 2008 with a forged will amendment naming himself heir.',

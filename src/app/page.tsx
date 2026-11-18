@@ -36,7 +36,7 @@ export default function TitleScreen() {
     <main className="relative w-full h-dvh overflow-hidden bg-obsidian">
       {/* Layer 1 — mansion illustration */}
       <Image
-        src="/assets/ui/title-mansion.png"
+        src="/assets/ui/title-mansion.jpg"
         alt="Ashworth House at night"
         fill
         priority
@@ -62,7 +62,7 @@ export default function TitleScreen() {
         className="absolute inset-0 pointer-events-none"
         style={{
           zIndex: 3,
-          backgroundImage: 'url(/assets/ui/mist.png)',
+          backgroundImage: 'url(/assets/ui/mist.jpg)',
           backgroundSize: 'cover',
           opacity: 0.25,
           animation: 'drift 60s linear infinite alternate',

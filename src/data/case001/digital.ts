@@ -46,7 +46,7 @@ export const DIGITAL_RECORDS: DigitalRecord[] = [
       caption: 'Photo — 11/11/2008 22:31',
       description:
         "Taken by Edmund's mobile. Shows a car in the drive and a figure at the porch.",
-      assetPath: '/assets/evidence/photo-car-drive.png',
+      assetPath: '/assets/evidence/photo-car-drive.jpg',
     },
   },
   {

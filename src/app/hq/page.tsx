@@ -142,7 +142,7 @@ export default function HQPage() {
           <ArchiveFrame className="overflow-hidden rounded-sm">
             <div className="relative w-full aspect-[4/3] bg-ink">
               <Image
-                src="/assets/scene/study-scene.png"
+                src="/assets/scene/study-scene.jpg"
                 alt="Ashworth House"
                 fill
                 className="object-cover"
