@@ -15,6 +15,7 @@ const problems: string[] = []
 
 const KEY_PATTERNS: Array<[RegExp, string]> = [
   [/AIza[0-9A-Za-z_-]{30,}/, 'Google API key'],
+  [/\bAQ\.[0-9A-Za-z_-]{30,}/, 'Google API key (new format)'],
   [/gsk_[0-9A-Za-z]{20,}/, 'Groq API key'],
   [/sk-[0-9A-Za-z]{20,}/, 'OpenAI-style secret key'],
   [/NEXT_PUBLIC_AI_/, 'AI variable exposed to the client (NEXT_PUBLIC_AI_*)'],
@@ -31,13 +32,34 @@ function walk(dir: string): string[] {
   return out
 }
 
-for (const file of walk(join(ROOT, 'src'))) {
+// Source, scripts, tests, and committed root files (including .env.example)
+const ROOT_FILES = ['.env.example', 'package.json', 'next.config.ts', 'vercel.json']
+  .map((f) => join(ROOT, f))
+  .filter((f) => { try { return statSync(f).isFile() } catch { return false } })
+const FILES = [
+  ...walk(join(ROOT, 'src')),
+  ...walk(join(ROOT, 'scripts')).filter((f) => !f.endsWith('secrets-check.ts')),
+  ...walk(join(ROOT, 'tests')),
+  ...ROOT_FILES,
+]
+
+for (const file of FILES) {
   const lines = readFileSync(file, 'utf-8').split('\n')
   lines.forEach((line, i) => {
     for (const [re, label] of KEY_PATTERNS) {
       if (re.test(line)) problems.push(`${relative(ROOT, file)}:${i + 1}  ${label}`)
     }
   })
+}
+
+try {
+  const example = readFileSync(join(ROOT, '.env.example'), 'utf-8')
+  const key = example.match(/^AI_API_KEY=(.*)$/m)?.[1]?.trim()
+  if (key && key !== 'your-api-key-here') {
+    problems.push('.env.example  AI_API_KEY must be the placeholder, not a real key')
+  }
+} catch {
+  // no example file
 }
 
 try {
