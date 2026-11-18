@@ -213,8 +213,9 @@ export default function ScenePage() {
       </div>
 
       {/* Object panel */}
+      {/* The layer ignores clicks; only the panel itself receives them */}
       <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 15 }}>
-        <div className="pointer-events-auto h-full">
+        <div className="h-full">
           <ObjectPanel
             object={selectedObject}
             collectedEvidenceIds={collectedIds}

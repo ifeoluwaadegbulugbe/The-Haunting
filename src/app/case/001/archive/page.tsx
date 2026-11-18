@@ -26,6 +26,7 @@ export default function ArchivePage() {
   const hydrated = useHydrated()
   const state = useGameStore((s) => s)
   const {
+    collectedEvidence,
     recoveredRecords,
     setLastRoute,
     recoverRecord,
@@ -85,7 +86,7 @@ export default function ArchivePage() {
 
   const handleRecover = (record: DigitalRecord) => {
     recoverRecord(record.id)
-    if (record.yieldsEvidence) {
+    if (record.yieldsEvidence && !useGameStore.getState().collectedEvidence[record.yieldsEvidence]) {
       collectEvidence(record.yieldsEvidence)
       const ev = CASE_001.evidence.find((e) => e.id === record.yieldsEvidence)
       if (ev) addAttention(ev.relevance === 'core' ? 6 : 3)
@@ -149,6 +150,7 @@ export default function ArchivePage() {
                   record={record}
                   isRecovered={isRecovered}
                   conditionMet={conditionMet}
+                  isCollected={Boolean(record.yieldsEvidence && collectedEvidence[record.yieldsEvidence])}
                   onRecover={() => handleRecover(record)}
                 />
               )

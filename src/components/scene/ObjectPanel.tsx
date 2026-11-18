@@ -41,7 +41,7 @@ export function ObjectPanel({
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: '100%', opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="absolute z-20 flex flex-col inset-x-0 bottom-0 max-h-[60%] lg:inset-x-auto lg:bottom-auto lg:top-0 lg:right-0 lg:h-full lg:max-h-none lg:w-80"
+        className="pointer-events-auto absolute z-20 flex flex-col inset-x-0 bottom-0 max-h-[60%] lg:inset-x-auto lg:bottom-auto lg:top-0 lg:right-0 lg:h-full lg:max-h-none lg:w-80"
         style={{ paddingTop: 'var(--panel-top, 0px)' }}
       >
         <ParchmentCard className="flex-1 overflow-y-auto m-3 p-5 flex flex-col gap-4">

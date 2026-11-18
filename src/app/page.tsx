@@ -15,18 +15,29 @@ export default function TitleScreen() {
   const muted = useGameStore((s) => s.ui.muted)
   const toggleMute = useGameStore((s) => s.toggleMute)
   const resetStore = useGameStore((s) => s.resetStore)
+  const startInvestigation = useGameStore((s) => s.startInvestigation)
 
   const [confirmNewOpen, setConfirmNewOpen] = useState(false)
+  const [nameOpen, setNameOpen] = useState(false)
+  const [name, setName] = useState('')
 
   const hasSave = Boolean(investigatorName)
 
   const handleBegin = () => {
-    router.push('/hq')
+    if (hasSave) return router.push('/hq')
+    setNameOpen(true)
   }
 
   const handleNewInvestigation = () => {
     resetStore()
     setConfirmNewOpen(false)
+    setNameOpen(true)
+  }
+
+  const handleStart = () => {
+    const clean = name.trim().replace(/\s+/g, ' ').slice(0, 40)
+    startInvestigation(clean || 'Investigator')
+    setNameOpen(false)
     router.push('/hq')
   }
 
@@ -133,6 +144,30 @@ export default function TitleScreen() {
           : <Volume2 size={18} color="var(--parchment)" />
         }
       </button>
+
+      {/* Investigator name */}
+      <Modal open={nameOpen} onClose={() => setNameOpen(false)} title="Who is investigating?">
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleStart() }}
+          className="space-y-4"
+        >
+          <label className="block font-inter text-sm text-parchment">
+            Your name
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={40}
+              placeholder="Investigator"
+              className="mt-2 w-full bg-ink border border-gold text-parchment font-inter text-base rounded px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            />
+          </label>
+          <div className="flex gap-3 justify-end">
+            <Button variant="ghost" type="button" onClick={() => setNameOpen(false)}>Cancel</Button>
+            <Button variant="primary" type="submit">Begin</Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* New investigation confirmation modal */}
       <Modal
