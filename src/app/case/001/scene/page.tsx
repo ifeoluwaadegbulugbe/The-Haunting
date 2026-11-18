@@ -12,6 +12,7 @@ import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { evaluateCondition, conditionMessage } from '@/lib/engine/conditions'
 import { evaluateEntityRules, dispatchEntityActions } from '@/lib/entity'
+import { playSound } from '@/lib/audio'
 import { CASE_001 } from '@/data/case001'
 import type { SceneObject } from '@/types'
 import type { HotspotState } from '@/components/scene/Hotspot'
@@ -78,6 +79,7 @@ export default function ScenePage() {
     // ER-01: telephone first inspection
     if (obj.id === 'OBJ-telephone' && !entity.firedRules.includes('ER-01')) {
       fireRule('ER-01')
+      playSound('phone-ring', useGameStore.getState().ui.muted)
       setShowPhoneOverlay(true)
       // Collect after overlay dismisses (handled in onDismiss)
       return
@@ -110,6 +112,7 @@ export default function ScenePage() {
             CASE_001
           )
           dispatchEntityActions(actions, dispatchStore, investigator.name, (line) => {
+            playSound('heartbeat', useGameStore.getState().ui.muted)
             setEntityOverlayText(line)
           })
         }

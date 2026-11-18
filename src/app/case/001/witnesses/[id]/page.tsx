@@ -94,11 +94,16 @@ export default function WitnessPage() {
     setIsLoading(true)
 
     addChatTurn(witnessId, { role: 'player', text: message, at: Date.now() })
+    // Trust only changes the first time a given item is shown to this witness
+    const firstTimePresented =
+      !!evidenceId && !(presentedEvidence[witnessId] ?? []).includes(evidenceId)
     if (evidenceId) markEvidencePresented(witnessId, evidenceId)
+    if (firstTimePresented) addAttention(4)
 
     const snapshot = {
       collectedEvidenceIds: Object.keys(collectedEvidence),
       revealedFactIds: revealedFacts,
+      presentedEvidenceIds: presentedEvidence[witnessId] ?? [],
       trust,
       recentTurns: (turns.slice(-8) as Array<{ role: 'player' | 'witness'; text: string; at: number }>).map((t) => ({
         role: t.role,
@@ -122,7 +127,7 @@ export default function WitnessPage() {
 
       addChatTurn(witnessId, { role: 'witness', text: data.reply, at: Date.now() })
 
-      if (data.trustDelta) {
+      if (data.trustDelta && firstTimePresented) {
         setTrust(witnessId, trust + data.trustDelta)
       }
 

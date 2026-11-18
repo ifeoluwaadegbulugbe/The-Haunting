@@ -8,6 +8,7 @@ export interface ResolverInput {
   snapshot: {
     collectedEvidenceIds: string[]
     revealedFactIds: string[]
+    presentedEvidenceIds?: string[]
     trust: number
     recentTurns: Array<{ role: 'player' | 'witness'; text: string }>
   }
@@ -26,8 +27,9 @@ export interface ResolverOutput {
  * We only need the fields that evaluateCondition touches.
  */
 function snapshotToState(
-  input: ResolverInput
-): Pick<GameState, 'collectedEvidence' | 'revealedFacts' | 'contradictionsFlagged' | 'presentedEvidence' | 'entity'> {
+  input: ResolverInput,
+  effectiveTrust: number
+): Pick<GameState, 'collectedEvidence' | 'revealedFacts' | 'contradictionsFlagged' | 'presentedEvidence' | 'entity' | 'witnessTrust'> {
   const { snapshot, witnessId, presentedEvidenceId } = input
 
   // Build collectedEvidence map
@@ -37,15 +39,17 @@ function snapshotToState(
   }
 
   // Add presentedEvidence to the witness bucket
-  const presentedEvidence: GameState['presentedEvidence'] = {}
-  if (presentedEvidenceId) {
-    presentedEvidence[witnessId] = [presentedEvidenceId]
+  const presentedIds = new Set(snapshot.presentedEvidenceIds ?? [])
+  if (presentedEvidenceId) presentedIds.add(presentedEvidenceId)
+  const presentedEvidence: GameState['presentedEvidence'] = {
+    [witnessId]: [...presentedIds],
   }
 
   return {
     collectedEvidence,
     revealedFacts: snapshot.revealedFactIds,
     contradictionsFlagged: [],
+    witnessTrust: { [witnessId]: effectiveTrust },
     presentedEvidence,
     entity: {
       attention: 0,
@@ -64,7 +68,21 @@ export function resolveWitnessTurn(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _caseData: Case001
 ): ResolverOutput {
-  const state = snapshotToState(input)
+  // Trust changes only the first time an item is shown to this witness. The client
+  // sends the history from before this presentation, so the server decides what is new.
+  let trustDelta = 0
+  const alreadyPresented =
+    !!input.presentedEvidenceId &&
+    (input.snapshot.presentedEvidenceIds ?? []).includes(input.presentedEvidenceId)
+  if (input.presentedEvidenceId && !alreadyPresented) {
+    const eventKey = `presented-${input.presentedEvidenceId}`
+    for (const rule of witness.trustRules) {
+      if (rule.on === eventKey) trustDelta += rule.delta
+    }
+  }
+  // Facts are evaluated against the trust the witness will have after this turn
+  const effectiveTrust = Math.min(100, Math.max(0, input.snapshot.trust + trustDelta))
+  const state = snapshotToState(input, effectiveTrust)
 
   const allowedFacts: WitnessFact[] = []
   const lockedFacts: WitnessFact[] = []
@@ -85,15 +103,6 @@ export function resolveWitnessTurn(
       if (lieStillAllowed) {
         activeLieLines.push(`${fact.id}: ${fact.deniedLine}`)
       }
-    }
-  }
-
-  // Trust delta from presented evidence
-  let trustDelta = 0
-  if (input.presentedEvidenceId) {
-    const eventKey = `presented-${input.presentedEvidenceId}`
-    for (const rule of witness.trustRules) {
-      if (rule.on === eventKey) trustDelta += rule.delta
     }
   }
 

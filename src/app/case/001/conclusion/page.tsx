@@ -23,6 +23,7 @@ export default function ConclusionPage() {
   const { theory, verdict, setLastRoute, setVerdict, plantEvidence, collectedEvidence, resetStore } = state
 
   const [phase, setPhase] = useState<Phase>(verdict ? 'report' : 'submission')
+  const [narration, setNarration] = useState<string>(CASE_001.truth.revealNarrationFallback)
 
   useEffect(() => { setLastRoute('/case/001/conclusion') }, [setLastRoute])
 
@@ -30,6 +31,21 @@ export default function ConclusionPage() {
   useEffect(() => {
     if (hydrated && !collectedEvidence['EV-X1']) plantEvidence('EV-X1')
   }, [hydrated, collectedEvidence, plantEvidence])
+
+  // Optional AI narration of the (already scored) result; the static text stays on any failure
+  useEffect(() => {
+    if (phase !== 'report' || !verdict) return
+    let cancelled = false
+    fetch('/api/verdict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score: verdict.score, breakdown: verdict.breakdown }),
+    })
+      .then((r) => r.json())
+      .then((d: { narration?: string }) => { if (!cancelled && d.narration) setNarration(d.narration) })
+      .catch(() => undefined)
+    return () => { cancelled = true }
+  }, [phase, verdict])
 
   const result = useMemo(
     () => (theory ? scoreTheory(theory, state, CASE_001) : null),
@@ -115,6 +131,7 @@ export default function ConclusionPage() {
         <main className="flex items-center justify-center py-10 px-4">
           <ReportCard
             result={result}
+            narration={narration}
             onReplay={() => { resetStore(); router.push('/') }}
             onHQ={() => router.push('/hq')}
           />

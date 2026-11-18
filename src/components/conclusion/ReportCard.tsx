@@ -3,6 +3,7 @@ import type { VerdictResult } from '@/lib/scoring'
 
 interface ReportCardProps {
   result:     VerdictResult
+  narration?: string
   onReplay:   () => void
   onHQ:       () => void
 }
@@ -40,7 +41,7 @@ const CATEGORY_LABELS: Record<string, { label: string; max: number; correct: str
   },
 }
 
-export function ReportCard({ result, onReplay, onHQ }: ReportCardProps) {
+export function ReportCard({ result, narration, onReplay, onHQ }: ReportCardProps) {
   const { score, breakdown, rank } = result
 
   return (
@@ -57,6 +58,12 @@ export function ReportCard({ result, onReplay, onHQ }: ReportCardProps) {
           </div>
         </div>
       </div>
+
+      {narration && (
+        <p className="font-cormorant text-obsidian text-base leading-relaxed border-t border-brown pt-4">
+          {narration}
+        </p>
+      )}
 
       {/* Breakdown */}
       <div className="space-y-3 border-t border-brown pt-4">

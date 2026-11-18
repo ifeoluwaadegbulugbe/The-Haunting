@@ -15,6 +15,7 @@ const WitnessRequestSchema = z.object({
   snapshot: z.object({
     collectedEvidenceIds: z.array(z.string()).max(50),
     revealedFactIds:      z.array(z.string()).max(50),
+    presentedEvidenceIds: z.array(z.string()).max(50).default([]),
     trust:                z.number().min(0).max(100),
     recentTurns: z.array(z.object({
       role: z.enum(['player', 'witness']),

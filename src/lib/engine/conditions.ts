@@ -3,7 +3,7 @@ import type { Condition, GameState } from '@/types'
 type ConditionState = Pick<
   GameState,
   'collectedEvidence' | 'revealedFacts' | 'contradictionsFlagged' |
-  'presentedEvidence' | 'entity'
+  'presentedEvidence' | 'entity' | 'witnessTrust'
 >
 
 /**
@@ -60,6 +60,16 @@ function evaluateCheck(
       return Object.values(state.presentedEvidence).some((ids) =>
         ids.includes(refStr)
       )
+    }
+
+    case 'trustAtLeast':
+    case 'trustBelow': {
+      // ref encodes as "witnessId:threshold"; missing trust defaults to 50
+      const [witnessId, raw] = String(ref).split(':')
+      const threshold = Number(raw)
+      if (!witnessId || Number.isNaN(threshold)) return false
+      const trust = state.witnessTrust[witnessId] ?? 50
+      return type === 'trustAtLeast' ? trust >= threshold : trust < threshold
     }
 
     case 'stageAtLeast':

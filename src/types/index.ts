@@ -22,6 +22,7 @@ export const EntityActionSchema = z.enum([
 ])
 export const ConditionCheckTypeSchema = z.enum([
   'hasEvidence', 'hasFact', 'hasContradiction', 'presentedEvidence', 'stageAtLeast',
+  'trustAtLeast', 'trustBelow',
 ])
 
 // ── Condition (recursive) ───────────────────────────────────────────────────

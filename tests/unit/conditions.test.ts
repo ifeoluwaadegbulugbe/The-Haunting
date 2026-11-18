@@ -112,6 +112,49 @@ describe('evaluateCondition', () => {
     })
   })
 
+  describe('trustAtLeast / trustBelow', () => {
+    it('trustAtLeast passes at or above the threshold', () => {
+      const state = makeState({ witnessTrust: { margaret: 60 } })
+      expect(
+        evaluateCondition({ allOf: [{ type: 'trustAtLeast', ref: 'margaret:60' }] }, state)
+      ).toBe(true)
+    })
+
+    it('trustAtLeast fails below the threshold', () => {
+      const state = makeState({ witnessTrust: { margaret: 59 } })
+      expect(
+        evaluateCondition({ allOf: [{ type: 'trustAtLeast', ref: 'margaret:60' }] }, state)
+      ).toBe(false)
+    })
+
+    it('trustBelow passes under the threshold and fails at it', () => {
+      expect(
+        evaluateCondition(
+          { allOf: [{ type: 'trustBelow', ref: 'julian:10' }] },
+          makeState({ witnessTrust: { julian: 9 } })
+        )
+      ).toBe(true)
+      expect(
+        evaluateCondition(
+          { allOf: [{ type: 'trustBelow', ref: 'julian:10' }] },
+          makeState({ witnessTrust: { julian: 10 } })
+        )
+      ).toBe(false)
+    })
+
+    it('missing trust defaults to 50', () => {
+      expect(
+        evaluateCondition({ allOf: [{ type: 'trustAtLeast', ref: 'margaret:50' }] }, makeState())
+      ).toBe(true)
+    })
+
+    it('malformed ref fails safely', () => {
+      expect(
+        evaluateCondition({ allOf: [{ type: 'trustAtLeast', ref: 'margaret' }] }, makeState())
+      ).toBe(false)
+    })
+  })
+
   describe('stageAtLeast', () => {
     it('passes when entity stage meets threshold', () => {
       const state = makeState({

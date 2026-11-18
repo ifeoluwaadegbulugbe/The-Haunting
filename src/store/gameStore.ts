@@ -151,12 +151,16 @@ export const useGameStore = create<GameStore>()(
         ),
 
       markEvidencePresented: (witnessId, evidenceId) =>
-        set((s) => ({
-          presentedEvidence: {
-            ...s.presentedEvidence,
-            [witnessId]: [...(s.presentedEvidence[witnessId] ?? []), evidenceId],
-          },
-        })),
+        set((s) =>
+          (s.presentedEvidence[witnessId] ?? []).includes(evidenceId)
+            ? {}
+            : {
+                presentedEvidence: {
+                  ...s.presentedEvidence,
+                  [witnessId]: [...(s.presentedEvidence[witnessId] ?? []), evidenceId],
+                },
+              }
+        ),
 
       // ── Board ─────────────────────────────────────────────────────────
       addLink: (a, b, verdict) =>

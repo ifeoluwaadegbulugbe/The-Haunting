@@ -62,9 +62,11 @@ export default function TitleScreen() {
         className="absolute inset-0 pointer-events-none"
         style={{
           zIndex: 3,
-          backgroundImage: 'url(/assets/ui/mist.jpg)',
-          backgroundSize: 'cover',
-          opacity: 0.25,
+          backgroundImage:
+            'radial-gradient(ellipse 60% 30% at 20% 85%, var(--parchment-dark), transparent 70%),' +
+            'radial-gradient(ellipse 70% 25% at 75% 92%, var(--parchment-dark), transparent 70%)',
+          width: '120%',
+          opacity: 0.12,
           animation: 'drift 60s linear infinite alternate',
         }}
       />

@@ -48,14 +48,14 @@ export const WITNESSES: Witness[] = [
         revealWhen: {
           anyOf: [
             { type: 'presentedEvidence', ref: 'EV-14' },
-            { type: 'hasFact', ref: 'M3-trust' },
+            { type: 'trustAtLeast', ref: 'margaret:60' },
           ],
         },
         deniedLine: 'I really — I didn\'t notice anyone. It was a dark night.',
         lieAllowedUntil: {
           anyOf: [
             { type: 'presentedEvidence', ref: 'EV-14' },
-            { type: 'hasFact', ref: 'M3-trust' },
+            { type: 'trustAtLeast', ref: 'margaret:60' },
           ],
         },
         forbiddenTokens: ['Julian', 'car', 'drive'],
@@ -90,7 +90,7 @@ export const WITNESSES: Witness[] = [
         revealWhen: {
           allOf: [
             { type: 'hasFact', ref: 'M5' },
-            { type: 'hasFact', ref: 'M6-trust' },
+            { type: 'trustAtLeast', ref: 'margaret:70' },
           ],
         },
         forbiddenTokens: ['warned', 'threatened', 'quiet'],
@@ -309,7 +309,7 @@ export const WITNESSES: Witness[] = [
         truth: 'At maximum pressure, Julian asks for a lawyer.',
         statement: "I think — I think at this point I should speak to a solicitor before answering any further questions.",
         revealWhen: {
-          allOf: [{ type: 'stageAtLeast', ref: 0 }],
+          allOf: [{ type: 'trustBelow', ref: 'julian:10' }],
         },
         forbiddenTokens: [],
       },
