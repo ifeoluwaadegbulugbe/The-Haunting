@@ -22,6 +22,10 @@ body {
   margin: 0;
 }
 
+@media (min-width: 1024px) {
+  :root { --panel-top: 56px; }
+}
+
 /* ── Focus reset — components apply their own ring ──────────────────── */
 :focus {
   outline: none;

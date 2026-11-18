@@ -52,6 +52,7 @@ export default function EvidenceBoardPage() {
   const [pendingTo, setPendingTo] = useState<{ x: number; y: number } | null>(null)
   const [notConclusive, setNotConclusive] = useState<string | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null)
+  const [connectFrom, setConnectFrom]     = useState<string | null>(null)
 
   useEffect(() => { setLastRoute('/case/001/evidence') }, [setLastRoute])
 
@@ -86,6 +87,24 @@ export default function EvidenceBoardPage() {
     allPositions[ev.id] = boardPositions[ev.id] ?? defaultPosition(i)
   })
 
+  // Shared by drag-to-connect (board) and tap-to-connect (phone list)
+  function connect(a: string, b: string) {
+    const alreadyLinked = links.some(
+      (l) => (l.a === a && l.b === b) || (l.a === b && l.b === a)
+    )
+    if (alreadyLinked) return
+    const verdict = evaluateLink(a, b, CASE_001)
+    addLink(a, b, verdict)
+    if (verdict === 'valid') {
+      addAttention(5)
+      fireEvents([{ type: 'linksReached', count: links.filter((l) => l.verdict === 'valid').length + 1 }])
+    } else if (verdict === 'invalid') {
+      const name = (id: string) => CASE_001.evidence.find((e) => e.id === id)?.name ?? id
+      setNotConclusive(` and ${name(b)}: not conclusive`)
+      setTimeout(() => setNotConclusive(null), 3000)
+    }
+  }
+
   // ── Thread drag handlers ─────────────────────────────────────────────────
 
   const handlePinDrag = (id: string, e: React.PointerEvent) => {
@@ -111,28 +130,19 @@ export default function EvidenceBoardPage() {
         return bx >= p.x && bx <= p.x + 120 && by >= p.y - 10 && by <= p.y + 100
       })
       if (!target || target.id === id) return
-
-      // Check for duplicate
-      const alreadyLinked = links.some(
-        (l) => (l.a === id && l.b === target.id) || (l.a === target.id && l.b === id)
-      )
-      if (alreadyLinked) return
-
-      const verdict = evaluateLink(id, target.id, CASE_001)
-      addLink(id, target.id, verdict)
-
-      if (verdict === 'valid') {
-        addAttention(5)
-        fireEvents([{ type: 'linksReached', count: links.filter((l) => l.verdict === 'valid').length + 1 }])
-      } else if (verdict === 'invalid') {
-        setNotConclusive(`${id} ↔ ${target.id}: Not conclusive`)
-        setTimeout(() => setNotConclusive(null), 3000)
-      }
+      connect(id, target.id)
     }
 
     document.addEventListener('pointermove', onMove)
     document.addEventListener('pointerup', onUp)
     e.stopPropagation()
+  }
+
+  const handleListConnect = (id: string) => {
+    if (!connectFrom) return setConnectFrom(id)
+    if (connectFrom === id) return setConnectFrom(null)
+    connect(connectFrom, id)
+    setConnectFrom(null)
   }
 
   // ── Contradiction confirm ────────────────────────────────────────────────
@@ -195,7 +205,8 @@ export default function EvidenceBoardPage() {
 
       {/* ── Connections tab ─────────────────────────────────────────────── */}
       {tab === 'connections' && (
-        <div className="flex gap-0">
+        <>
+        <div className="hidden md:flex gap-0">
           <div
             ref={boardRef}
             className="relative flex-1 overflow-auto"
@@ -250,7 +261,7 @@ export default function EvidenceBoardPage() {
 
           {/* Contradictions sidebar */}
           {availableContradictions.length > 0 && (
-            <div className="w-72 flex-shrink-0 overflow-y-auto p-3 space-y-3 border-l border-gold bg-ink" style={{ maxHeight: 'calc(100dvh - 112px)' }}>
+            <div className="w-60 lg:w-72 flex-shrink-0 overflow-y-auto p-3 space-y-3 border-l border-gold bg-ink" style={{ maxHeight: 'calc(100dvh - 112px)' }}>
               <h3 className="font-cormorant font-semibold text-parchment text-base">Contradictions</h3>
               {availableContradictions.map((cx) => (
                 <ContradictionBadge
@@ -263,6 +274,54 @@ export default function EvidenceBoardPage() {
             </div>
           )}
         </div>
+
+        {/* Phone: list view with a two-tap Connect action */}
+        <div className="md:hidden p-4 space-y-3">
+          <p className="font-caveat text-parchment-dark text-sm">
+            {connectFrom
+              ? 'Now choose the second item to connect.'
+              : 'Tap Connect on one item, then on another.'}
+          </p>
+          {collectedItems.map((ev) => {
+            const linked = links.filter((l) => l.a === ev.id || l.b === ev.id)
+            return (
+              <div
+                key={ev.id}
+                className="flex items-center justify-between gap-3 p-3 rounded border"
+                style={{
+                  background: 'var(--ink)',
+                  borderColor: connectFrom === ev.id ? 'var(--gold)' : 'var(--brown)',
+                }}
+              >
+                <div className="min-w-0">
+                  <p className="font-inter text-sm text-parchment truncate">{ev.name}</p>
+                  <p className="font-inter text-xs text-parchment-dark">
+                    {linked.filter((l) => l.verdict !== 'invalid').length} connection(s)
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleListConnect(ev.id)}
+                  className="font-inter text-xs px-3 rounded border cursor-pointer flex-shrink-0"
+                  style={{ minHeight: '44px', background: 'none', borderColor: 'var(--gold)', color: 'var(--parchment)' }}
+                >
+                  {connectFrom === ev.id ? 'Cancel' : 'Connect'}
+                </button>
+              </div>
+            )
+          })}
+          {notConclusive && (
+            <p className="font-caveat text-sm text-parchment-dark">{notConclusive}</p>
+          )}
+          {availableContradictions.map((cx) => (
+            <ContradictionBadge
+              key={cx.id}
+              contradiction={cx}
+              isConfirmed={contradictionsFlagged.includes(cx.id)}
+              onConfirm={handleConfirmContradiction}
+            />
+          ))}
+        </div>
+        </>
       )}
 
       {/* ── Timeline tab ────────────────────────────────────────────────── */}

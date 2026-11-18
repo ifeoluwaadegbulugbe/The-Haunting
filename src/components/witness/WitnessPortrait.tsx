@@ -11,7 +11,7 @@ interface WitnessPortraitProps {
 
 export function WitnessPortrait({ witness, trust, flickering }: WitnessPortraitProps) {
   return (
-    <div className="flex flex-col gap-3 w-56 flex-shrink-0">
+    <div className="flex flex-col gap-3 w-full max-w-56 mx-auto md:mx-0 md:w-56 flex-shrink-0">
       <ArchiveFrame className="overflow-hidden">
         <div
           className="relative w-full"

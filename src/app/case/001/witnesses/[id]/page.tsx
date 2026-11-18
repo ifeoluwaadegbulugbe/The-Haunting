@@ -216,7 +216,7 @@ export default function WitnessPage() {
         </div>
 
         {/* Main layout */}
-        <div className="flex gap-6 items-start">
+        <div className="flex flex-col md:flex-row gap-6 items-stretch md:items-start">
           {/* Portrait */}
           <WitnessPortrait witness={witness} trust={trust} flickering={flickering} />
 
