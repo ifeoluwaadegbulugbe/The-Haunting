@@ -22,3 +22,6 @@ Thumbs.db
 # editor
 .vscode/
 .idea/
+
+# original uncompressed audio (MP3s in public/ are what ships)
+audio-source/
