@@ -15,6 +15,7 @@ import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { selectUnlockedSections, selectProgress, selectRank } from '@/store/selectors'
 import { evaluateEntityRules, dispatchEntityActions } from '@/lib/entity'
+import { playSound } from '@/lib/audio'
 import { CASE_001 } from '@/data/case001'
 import type { Evidence } from '@/types'
 
@@ -79,6 +80,7 @@ export default function WitnessPage() {
       dispatchEntityActions(actions, dispatchStore, investigator.name, (line) => {
         // ER-05: portrait flicker + overlay
         if (actions.some((a) => a.action === 'apparition')) {
+          playSound('phone-ring', useGameStore.getState().ui.muted)
           setFlickering(true)
           setTimeout(() => setFlickering(false), 2000)
         }

@@ -26,6 +26,7 @@ export const INITIAL_STATE: GameState = {
     firedRules: [],
     disturbed: [],
     lockedObjects: [],
+    locks: {},
     messages: [],
   },
   theory: undefined,
@@ -65,8 +66,10 @@ interface GameStore extends GameState {
   addAttention: (delta: number) => void
   fireRule: (ruleId: string) => void
   disturbEvidence: (id: string) => void
-  lockObject: (id: string) => void
+  lockObject: (id: string, durationMs?: number) => void
   unlockObject: (id: string) => void
+  expireLocks: (now?: number) => void
+  reverifyEvidence: (id: string) => void
   addEntityMessage: (msg: { id: string; text: string; at: number }) => void
   plantEvidence: (id: string) => void
 
@@ -215,19 +218,54 @@ export const useGameStore = create<GameStore>()(
             : { entity: { ...s.entity, disturbed: [...s.entity.disturbed, id] } }
         ),
 
-      lockObject: (id) =>
+      lockObject: (id, durationMs = 120_000) =>
         set((s) =>
           s.entity.lockedObjects.includes(id)
             ? {}
-            : { entity: { ...s.entity, lockedObjects: [...s.entity.lockedObjects, id] } }
+            : {
+                entity: {
+                  ...s.entity,
+                  lockedObjects: [...s.entity.lockedObjects, id],
+                  locks: {
+                    ...(s.entity.locks ?? {}),
+                    [id]: { until: Date.now() + durationMs, atInspected: s.inspectedObjects.length },
+                  },
+                },
+              }
         ),
 
       unlockObject: (id) =>
+        set((s) => {
+          const locks = { ...(s.entity.locks ?? {}) }
+          delete locks[id]
+          return {
+            entity: {
+              ...s.entity,
+              lockedObjects: s.entity.lockedObjects.filter((o) => o !== id),
+              locks,
+            },
+          }
+        }),
+
+      // A lock ends after its time runs out or after two more inspections.
+      // Locks without a record (older saves) are released immediately.
+      expireLocks: (now = Date.now()) =>
+        set((s) => {
+          const locks = s.entity.locks ?? {}
+          const keep = s.entity.lockedObjects.filter((id) => {
+            const l = locks[id]
+            if (!l) return false
+            return now < l.until && s.inspectedObjects.length - l.atInspected < 2
+          })
+          if (keep.length === s.entity.lockedObjects.length) return {}
+          const nextLocks = Object.fromEntries(Object.entries(locks).filter(([id]) => keep.includes(id)))
+          return { entity: { ...s.entity, lockedObjects: keep, locks: nextLocks } }
+        }),
+
+      // Clearing a disturbance is one click and never touches the evidence itself
+      reverifyEvidence: (id) =>
         set((s) => ({
-          entity: {
-            ...s.entity,
-            lockedObjects: s.entity.lockedObjects.filter((o) => o !== id),
-          },
+          entity: { ...s.entity, disturbed: s.entity.disturbed.filter((d) => d !== id) },
         })),
 
       addEntityMessage: (msg) =>

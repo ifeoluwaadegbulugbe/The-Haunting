@@ -12,6 +12,7 @@ import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { selectUnlockedSections, selectProgress, selectRank } from '@/store/selectors'
 import { scoreTheory } from '@/lib/scoring'
+import { evaluateEntityRules, dispatchEntityActions } from '@/lib/entity'
 import { CASE_001 } from '@/data/case001'
 
 type Phase = 'submission' | 'reveal' | 'report'
@@ -29,7 +30,12 @@ export default function ConclusionPage() {
 
   // ER-06b fail-safe: plant EV-X1 whenever the Conclusion is opened without it
   useEffect(() => {
-    if (hydrated && !collectedEvidence['EV-X1']) plantEvidence('EV-X1')
+    if (!hydrated || collectedEvidence['EV-X1']) return
+    const s = useGameStore.getState()
+    const actions = evaluateEntityRules(s, { type: 'conclusionOpened' }, CASE_001)
+    dispatchEntityActions(actions, s, s.investigator.name)
+    // Belt and braces: the false lead must always exist so it can be disproved
+    if (!useGameStore.getState().collectedEvidence['EV-X1']) plantEvidence('EV-X1')
   }, [hydrated, collectedEvidence, plantEvidence])
 
   // Optional AI narration of the (already scored) result; the static text stays on any failure

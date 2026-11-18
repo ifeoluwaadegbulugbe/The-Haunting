@@ -57,6 +57,7 @@ function snapshotToState(
       firedRules: [],
       disturbed: [],
       lockedObjects: [],
+      locks: {},
       messages: [],
     },
   }

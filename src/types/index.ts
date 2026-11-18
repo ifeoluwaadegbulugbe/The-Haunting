@@ -279,6 +279,8 @@ export const GameStateSchema = z.object({
     firedRules:   z.array(z.string()),
     disturbed:    z.array(z.string()),
     lockedObjects: z.array(z.string()),
+    // Lockouts expire after a time or after N further inspections (never permanent)
+    locks: z.record(z.object({ until: z.number(), atInspected: z.number() })).default({}),
     messages:     z.array(EntityMessageRecordSchema),
   }),
   theory:  TheorySchema.optional(),

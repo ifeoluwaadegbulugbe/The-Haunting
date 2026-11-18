@@ -68,11 +68,8 @@ export function dispatchEntityActions(
 
       case 'lockout':
         if (action.targetRef) {
+          // Expiry is stored with the lock (time or two inspections), so it survives refresh
           storeActions.lockObject(action.targetRef)
-          // Auto-unlock after 120 seconds
-          setTimeout(() => {
-            storeActions.unlockObject(action.targetRef!)
-          }, 120_000)
         }
         break
 

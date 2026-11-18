@@ -9,6 +9,8 @@ interface EvidenceTrayProps {
   collectedIds: string[]
   allEvidence: Evidence[]
   confirmedContradictions: string[]
+  disturbedIds?: string[]
+  onReverify?: (id: string) => void
 }
 
 const KIND_ICONS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
@@ -23,7 +25,9 @@ const KIND_ICONS: Record<string, React.ComponentType<{ size?: number; color?: st
   statement:  FileText,
 }
 
-export function EvidenceTray({ collectedIds, allEvidence, confirmedContradictions }: EvidenceTrayProps) {
+export function EvidenceTray({
+  collectedIds, allEvidence, confirmedContradictions, disturbedIds = [], onReverify,
+}: EvidenceTrayProps) {
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null)
   const trayRef = useRef<HTMLDivElement>(null)
 
@@ -100,6 +104,8 @@ export function EvidenceTray({ collectedIds, allEvidence, confirmedContradiction
       <EvidenceDetailModal
         evidence={selectedEvidence}
         cxConfirmed={confirmedContradictions}
+        disturbed={!!selectedEvidence && disturbedIds.includes(selectedEvidence.id)}
+        onReverify={onReverify}
         onClose={() => setSelectedEvidence(null)}
       />
     </>

@@ -6,6 +6,8 @@ import type { Evidence } from '@/types'
 interface EvidenceDetailModalProps {
   evidence: Evidence | null
   cxConfirmed: string[]
+  disturbed?: boolean
+  onReverify?: (id: string) => void
   onClose: () => void
 }
 
@@ -27,9 +29,16 @@ const RELIABILITY_COLORS: Record<string, string> = {
   low: 'var(--thread)',
 }
 
+// Disturbed text is unreadable but recoverable: letters are masked, never deleted
+function garble(text: string): string {
+  return text.replace(/[A-Za-z]/g, (c, i: number) => (i % 3 === 0 ? c : '▒'))
+}
+
 export function EvidenceDetailModal({
   evidence,
   cxConfirmed,
+  disturbed = false,
+  onReverify,
   onClose,
 }: EvidenceDetailModalProps) {
   if (!evidence) return null
@@ -53,8 +62,21 @@ export function EvidenceDetailModal({
         </div>
 
         <p className="font-inter text-sm text-parchment leading-relaxed">
-          {evidence.description}
+          {disturbed ? garble(evidence.description) : evidence.description}
         </p>
+
+        {disturbed && (
+          <div className="space-y-2">
+            <p className="font-caveat text-sm text-parchment-dark">
+              Something has interfered with this record.
+            </p>
+            {onReverify && (
+              <Button variant="secondary" onClick={() => onReverify(evidence.id)}>
+                Re-verify
+              </Button>
+            )}
+          </div>
+        )}
 
         <p className="font-caveat text-xs text-parchment-dark">
           Source: {evidence.source}

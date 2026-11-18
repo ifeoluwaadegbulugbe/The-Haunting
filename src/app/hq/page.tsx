@@ -200,7 +200,7 @@ export default function HQPage() {
       </div>
 
       {/* Entity notification tray */}
-      <NotificationTray messages={entity.messages} />
+      {!verdict && <NotificationTray messages={entity.messages} />}
     </div>
   )
 }

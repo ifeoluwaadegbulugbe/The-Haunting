@@ -37,16 +37,26 @@ export default function ScenePage() {
     plantEvidence,
     lockObject,
     unlockObject,
+    expireLocks,
+    reverifyEvidence,
     fireRule,
   } = state
 
   const [selectedObject, setSelectedObject] = useState<SceneObject | null>(null)
   const [showPhoneOverlay, setShowPhoneOverlay] = useState(false)
   const [entityOverlayText, setEntityOverlayText] = useState<string | null>(null)
+  const [lockNotice, setLockNotice] = useState<string | null>(null)
 
   useEffect(() => {
     setLastRoute('/case/001/scene')
   }, [setLastRoute])
+
+  // Entity lockouts end after their time or after two more inspections
+  useEffect(() => {
+    expireLocks()
+    const t = setInterval(() => expireLocks(), 5000)
+    return () => clearInterval(t)
+  }, [expireLocks])
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -59,19 +69,24 @@ export default function ScenePage() {
 
   const getHotspotState = useCallback(
     (obj: SceneObject): HotspotState => {
-      if (entity.disturbed.includes(obj.id)) return 'disturbed'
+      if (entity.disturbed.includes(obj.id) || entity.lockedObjects.includes(obj.id)) return 'disturbed'
       if (inspectedObjects.includes(obj.id)) return 'inspected'
       if (obj.discoveryCondition && !evaluateCondition(obj.discoveryCondition, state)) {
         return 'locked'
       }
       return 'undiscovered'
     },
-    [entity.disturbed, inspectedObjects, state]
+    [entity.disturbed, entity.lockedObjects, inspectedObjects, state]
   )
 
   const handleHotspotClick = (obj: SceneObject) => {
     const hs = getHotspotState(obj)
     if (hs === 'locked') return
+    if (entity.lockedObjects.includes(obj.id)) {
+      setLockNotice('Something is holding it shut. Try again shortly, or look elsewhere first.')
+      setTimeout(() => setLockNotice(null), 3500)
+      return
+    }
     setSelectedObject(obj)
   }
 
@@ -119,17 +134,7 @@ export default function ScenePage() {
       }
     }
 
-    // Check stage transitions
-    const afterState = useGameStore.getState()
-    const stageActions = evaluateEntityRules(
-      afterState,
-      { type: 'stageReached', ref: String(afterState.entity.stage) },
-      CASE_001
-    )
-    dispatchEntityActions(stageActions, dispatchStore, investigator.name, (line) => {
-      setEntityOverlayText(line)
-    })
-
+    expireLocks()
     setSelectedObject(null)
   }
 
@@ -234,8 +239,20 @@ export default function ScenePage() {
           collectedIds={collectedIds}
           allEvidence={CASE_001.evidence}
           confirmedContradictions={contradictionsFlagged}
+          disturbedIds={entity.disturbed}
+          onReverify={reverifyEvidence}
         />
       </div>
+
+      {lockNotice && (
+        <div
+          role="status"
+          className="absolute left-1/2 -translate-x-1/2 font-caveat text-sm px-4 py-2 rounded"
+          style={{ top: '64px', zIndex: 20, background: 'var(--ink)', color: 'var(--parchment)', border: '1px solid var(--gold)' }}
+        >
+          {lockNotice}
+        </div>
+      )}
 
       {/* ER-08 / other entity overlays */}
       {entityOverlayText && (
