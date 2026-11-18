@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -12,12 +11,12 @@ import { EntityOverlay } from '@/components/entity/EntityOverlay'
 import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { evaluateCondition, conditionMessage } from '@/lib/engine/conditions'
+import { evaluateEntityRules, dispatchEntityActions } from '@/lib/entity'
 import { CASE_001 } from '@/data/case001'
 import type { SceneObject } from '@/types'
 import type { HotspotState } from '@/components/scene/Hotspot'
 
 export default function ScenePage() {
-  const router = useRouter()
   const hydrated = useHydrated()
 
   const state = useGameStore((s) => s)
@@ -26,16 +25,23 @@ export default function ScenePage() {
     collectedEvidence,
     contradictionsFlagged,
     entity,
+    investigator,
     setLastRoute,
     discoverObject,
     inspectObject,
     collectEvidence,
     addAttention,
+    addEntityMessage,
+    disturbEvidence,
+    plantEvidence,
+    lockObject,
+    unlockObject,
     fireRule,
   } = state
 
   const [selectedObject, setSelectedObject] = useState<SceneObject | null>(null)
   const [showPhoneOverlay, setShowPhoneOverlay] = useState(false)
+  const [entityOverlayText, setEntityOverlayText] = useState<string | null>(null)
 
   useEffect(() => {
     setLastRoute('/case/001/scene')
@@ -79,18 +85,48 @@ export default function ScenePage() {
     doCollect(obj)
   }
 
+  const dispatchStore = {
+    addEntityMessage, disturbEvidence, plantEvidence,
+    lockObject, unlockObject, fireRule, addAttention,
+  }
+
   const doCollect = (obj: SceneObject) => {
     discoverObject(obj.id)
     inspectObject(obj.id)
+    // Add attention for inspecting
+    addAttention(2)
+
     for (const evId of obj.yieldsEvidence) {
       if (!collectedEvidence[evId]) {
         collectEvidence(evId)
         const ev = CASE_001.evidence.find((e) => e.id === evId)
         if (ev) {
           addAttention(ev.relevance === 'core' ? 6 : 3)
+          // Fire entity rules for evidence collected
+          const currentState = useGameStore.getState()
+          const actions = evaluateEntityRules(
+            currentState,
+            { type: 'evidenceCollected', ref: evId },
+            CASE_001
+          )
+          dispatchEntityActions(actions, dispatchStore, investigator.name, (line) => {
+            setEntityOverlayText(line)
+          })
         }
       }
     }
+
+    // Check stage transitions
+    const afterState = useGameStore.getState()
+    const stageActions = evaluateEntityRules(
+      afterState,
+      { type: 'stageReached', ref: String(afterState.entity.stage) },
+      CASE_001
+    )
+    dispatchEntityActions(stageActions, dispatchStore, investigator.name, (line) => {
+      setEntityOverlayText(line)
+    })
+
     setSelectedObject(null)
   }
 
@@ -134,7 +170,6 @@ export default function ScenePage() {
       >
         <Link
           href="/hq"
-          onClick={() => router.prefetch('/hq')}
           className="flex items-center gap-2 font-inter text-xs text-parchment-dark hover:text-parchment transition-colors"
         >
           <ArrowLeft size={16} />
@@ -198,6 +233,15 @@ export default function ScenePage() {
           confirmedContradictions={contradictionsFlagged}
         />
       </div>
+
+      {/* ER-08 / other entity overlays */}
+      {entityOverlayText && (
+        <EntityOverlay
+          open={!!entityOverlayText}
+          text={entityOverlayText}
+          onDismiss={() => setEntityOverlayText(null)}
+        />
+      )}
 
       {/* ER-01 entity overlay */}
       <EntityOverlay

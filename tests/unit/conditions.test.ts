@@ -98,13 +98,17 @@ describe('evaluateCondition', () => {
       ).toBe(false)
     })
 
-    it('fails with malformed ref (no colon)', () => {
+    it('fails with malformed ref (no colon) — still checks any-witness', () => {
+      // No colon → checks if EV-11 presented to any witness
+      const state = makeState({
+        presentedEvidence: { margaret: ['EV-11'] },
+      })
       expect(
         evaluateCondition(
           { allOf: [{ type: 'presentedEvidence', ref: 'EV-11' }] },
-          makeState()
+          state
         )
-      ).toBe(false)
+      ).toBe(true)
     })
   })
 

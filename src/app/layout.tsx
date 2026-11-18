@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Cinzel, Cormorant_Garamond, Inter, Caveat } from 'next/font/google'
 import { HydrationGuard } from '@/components/ui/HydrationGuard'
+import { HauntLevelSync } from '@/components/entity/HauntLevelSync'
 import '@/styles/globals.css'
 
 const cinzel = Cinzel({
@@ -48,7 +49,7 @@ export default function RootLayout({
         caveat.variable,
       ].join(' ')}
     >
-      <body><HydrationGuard>{children}</HydrationGuard></body>
+      <body><HydrationGuard>{children}</HydrationGuard><HauntLevelSync /></body>
     </html>
   )
 }

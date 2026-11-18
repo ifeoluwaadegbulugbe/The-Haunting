@@ -48,11 +48,18 @@ function evaluateCheck(
       return state.contradictionsFlagged.includes(String(ref))
 
     case 'presentedEvidence': {
-      // ref encodes as "witnessId:evidenceId"
-      const parts = String(ref).split(':')
-      if (parts.length !== 2) return false
-      const [witnessId, evidenceId] = parts
-      return state.presentedEvidence[witnessId]?.includes(evidenceId) ?? false
+      // ref encodes as "witnessId:evidenceId" or just "evidenceId"
+      const refStr = String(ref)
+      if (refStr.includes(':')) {
+        const parts = refStr.split(':')
+        if (parts.length !== 2) return false
+        const [witnessId, evidenceId] = parts
+        return state.presentedEvidence[witnessId]?.includes(evidenceId) ?? false
+      }
+      // No witness prefix — check if presented to any witness
+      return Object.values(state.presentedEvidence).some((ids) =>
+        ids.includes(refStr)
+      )
     }
 
     case 'stageAtLeast':
