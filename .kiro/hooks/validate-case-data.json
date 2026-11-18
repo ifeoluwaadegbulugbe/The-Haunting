@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Validate case data",
+      "trigger": "PostFileSave",
+      "description": "After any Case 001 data file is saved, checks every ID reference (evidence, timeline, statements, links, entity targets). Fails if a reference is broken.",
+      "matcher": "src[\\\\/]data[\\\\/]case001[\\\\/].*\\.ts$",
+      "action": {
+        "type": "command",
+        "command": "npm run validate:case",
+        "timeout": 60
+      }
+    }
+  ]
+}

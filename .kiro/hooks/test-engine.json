@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Test engine modules",
+      "trigger": "PostFileSave",
+      "description": "After a pure game-logic module is saved (engine, evidence, scoring, entity, witness AI), runs the Vitest suite.",
+      "matcher": "src[\\\\/]lib[\\\\/](engine|evidence|scoring|entity|ai)[\\\\/].*\\.ts$",
+      "action": {
+        "type": "command",
+        "command": "npx vitest run --reporter=dot",
+        "timeout": 120
+      }
+    }
+  ]
+}

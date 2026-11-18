@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Usage log",
+      "trigger": "PostTaskExec",
+      "description": "After a spec task runs, appends a dated row (task and changed files) to the task log in docs/KIRO_USAGE.md.",
+      "action": {
+        "type": "command",
+        "command": "npm run usage-log --silent",
+        "timeout": 60
+      }
+    }
+  ]
+}

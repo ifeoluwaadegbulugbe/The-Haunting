@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Design token check",
+      "trigger": "PostFileSave",
+      "description": "After a component is saved, fails on raw hex colours, bare font families, or entity colours used outside entity and conclusion components.",
+      "matcher": "src[\\\\/]components[\\\\/].*\\.tsx?$",
+      "action": {
+        "type": "command",
+        "command": "npm run token-check",
+        "timeout": 60
+      }
+    }
+  ]
+}

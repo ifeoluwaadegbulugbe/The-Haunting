@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "validate:case": "tsx scripts/validate-case.ts",
-    "token-check": "tsx scripts/token-check.ts"
+    "token-check": "tsx scripts/token-check.ts",
+    "secrets-check": "tsx scripts/secrets-check.ts",
+    "usage-log": "tsx scripts/usage-log.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",
