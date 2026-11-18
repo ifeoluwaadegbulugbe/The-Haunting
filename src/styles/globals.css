@@ -69,6 +69,12 @@ body {
   }
 }
 
+/* Entity-disturbed evidence card (entity colour kept in CSS, not components) */
+[data-disturbed='true'] {
+  border: 1.5px solid var(--entity-glow);
+  animation: flicker 0.8s ease-in-out infinite;
+}
+
 /* Reduced-motion fallbacks — instant, no movement */
 @media (prefers-reduced-motion: reduce) {
   @keyframes drift    { 0%, 100% { transform: none; } }

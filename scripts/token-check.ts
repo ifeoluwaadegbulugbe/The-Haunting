@@ -36,7 +36,9 @@ function checkFile(filePath: string) {
   const content = readFileSync(filePath, 'utf-8')
   const lines = content.split('\n')
 
-  const isEntityComponent = rel.includes('components/entity/')
+  // Entity colours are allowed in entity events and the Conclusion reveal
+  const isEntityComponent =
+    rel.includes('components/entity/') || rel.includes('components/conclusion/')
 
   lines.forEach((line, idx) => {
     const lineNum = idx + 1
