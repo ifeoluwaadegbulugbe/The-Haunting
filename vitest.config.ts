@@ -12,6 +12,7 @@ export default defineConfig({
       },
     },
     setupFiles: ['./tests/setup.ts'],
+    include: ['tests/unit/**/*.test.{ts,tsx}', 'tests/component/**/*.test.{ts,tsx}'],
     globals: true,
   },
   resolve: {

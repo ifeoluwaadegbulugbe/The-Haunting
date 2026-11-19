@@ -26,7 +26,7 @@ export function Hotspot({ object, state, onClick, lockedMessage }: HotspotProps)
       aria-pressed={state === 'inspected'}
       title={isLocked ? (lockedMessage ?? 'Locked') : name}
       onClick={isLocked ? undefined : onClick}
-      className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+      className="group absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
       style={{
         left: `${hotspot.x}%`,
         top: `${hotspot.y}%`,
@@ -68,6 +68,15 @@ export function Hotspot({ object, state, onClick, lockedMessage }: HotspotProps)
           )}
         </svg>
       )}
+
+      {/* Name tag on hover or keyboard focus */}
+      <span
+        aria-hidden="true"
+        className="absolute left-1/2 -translate-x-1/2 top-full mt-1 whitespace-nowrap font-inter text-xs px-2 py-1 rounded pointer-events-none opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity"
+        style={{ background: 'rgba(14,12,16,0.85)', color: 'var(--parchment)', border: '1px solid var(--gold)' }}
+      >
+        {name}
+      </span>
 
       {isLocked && (
         <span className="absolute inset-0 flex items-center justify-center pointer-events-none">

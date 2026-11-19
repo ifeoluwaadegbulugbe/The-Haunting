@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { Lock } from 'lucide-react'
 import { Button, ArchiveFrame, ParchmentCard, CaseFolder } from '@/components/ui'
 import { TopBar } from '@/components/archive/TopBar'
-import { NotificationTray } from '@/components/entity/NotificationTray'
 import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { selectProgress, selectRank, selectUnlockedSections } from '@/store/selectors'
@@ -49,7 +48,6 @@ export default function HQPage() {
     collectedEvidence,
     contradictionsFlagged,
     witnessChats,
-    entity,
     verdict,
     ui,
   } = state
@@ -82,6 +80,7 @@ export default function HQPage() {
     '/case/001/archive',
     '/case/001/witnesses',
     '/case/001/evidence',
+    '/case/001/conclusion',
   ]
   const destination =
     ui.lastRoute && allowedRoutes.some((r) => ui.lastRoute.startsWith(r))
@@ -200,7 +199,6 @@ export default function HQPage() {
       </div>
 
       {/* Entity notification tray */}
-      {!verdict && <NotificationTray messages={entity.messages} />}
     </div>
   )
 }
@@ -209,7 +207,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
       <p className="font-inter text-xs text-brown uppercase tracking-wide">{label}</p>
-      <p className="font-cormorant font-semibold text-obsidian text-xl">{value}</p>
+      <p className="font-inter font-semibold text-obsidian text-xl tabular-nums">{value}</p>
     </div>
   )
 }

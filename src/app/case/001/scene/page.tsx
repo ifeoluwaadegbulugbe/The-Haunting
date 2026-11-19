@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -17,8 +17,12 @@ import { CASE_001 } from '@/data/case001'
 import type { SceneObject } from '@/types'
 import type { HotspotState } from '@/components/scene/Hotspot'
 
+// study-scene.jpg is 1376 x 768
+const SCENE_RATIO = 1376 / 768
+
 export default function ScenePage() {
   const hydrated = useHydrated()
+  const sceneRef = useRef<HTMLDivElement>(null)
 
   const state = useGameStore((s) => s)
   const {
@@ -46,6 +50,12 @@ export default function ScenePage() {
   const [showPhoneOverlay, setShowPhoneOverlay] = useState(false)
   const [entityOverlayText, setEntityOverlayText] = useState<string | null>(null)
   const [lockNotice, setLockNotice] = useState<string | null>(null)
+
+  // Start narrow screens centred on the desk
+  useEffect(() => {
+    const el = sceneRef.current
+    if (hydrated && el) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2
+  }, [hydrated])
 
   useEffect(() => {
     setLastRoute('/case/001/scene')
@@ -151,25 +161,45 @@ export default function ScenePage() {
 
   return (
     <div className="relative w-full h-dvh overflow-hidden bg-obsidian">
-      {/* Scene background */}
-      <Image
-        src="/assets/scene/study-scene.jpg"
-        alt="Ashworth House study"
-        fill
-        priority
-        className="object-cover object-center"
-        style={{ zIndex: 1 }}
-      />
-
-      {/* Dark overlay */}
+      {/* Scene stage: image and hotspots share one surface with the picture's
+          proportions, so rings stay on their objects at any screen size.
+          Narrow screens pan sideways across the study. */}
       <div
-        aria-hidden="true"
-        className="absolute inset-0"
-        style={{
-          zIndex: 2,
-          background: 'linear-gradient(to top, rgba(14,12,16,0.5) 0%, rgba(14,12,16,0.1) 60%)',
-        }}
-      />
+        ref={sceneRef}
+        className="absolute inset-0 overflow-x-auto overflow-y-hidden"
+        style={{ zIndex: 1, scrollbarWidth: 'none' }}
+      >
+        <div
+          className="absolute left-0 top-1/2 -translate-y-1/2"
+          style={{
+            width: `max(100%, calc(100dvh * ${SCENE_RATIO}))`,
+            height: `max(100%, calc(100vw / ${SCENE_RATIO}))`,
+          }}
+        >
+          <Image
+            src="/assets/scene/study-scene.jpg"
+            alt="Ashworth House study"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgba(14,12,16,0.5) 0%, rgba(14,12,16,0.1) 60%)' }}
+          />
+          {CASE_001.scene.map((obj) => (
+            <Hotspot
+              key={obj.id}
+              object={obj}
+              state={getHotspotState(obj)}
+              onClick={() => handleHotspotClick(obj)}
+              lockedMessage={conditionMessage(obj.id)}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Top bar */}
       <div
@@ -194,22 +224,6 @@ export default function ScenePage() {
         >
           {selectedObject ? '✕' : ''}
         </button>
-      </div>
-
-      {/* Hotspots */}
-      <div className="absolute inset-0" style={{ zIndex: 5 }}>
-        {CASE_001.scene.map((obj) => {
-          const hs = getHotspotState(obj)
-          return (
-            <Hotspot
-              key={obj.id}
-              object={obj}
-              state={hs}
-              onClick={() => handleHotspotClick(obj)}
-              lockedMessage={conditionMessage(obj.id)}
-            />
-          )
-        })}
       </div>
 
       {/* Object panel */}

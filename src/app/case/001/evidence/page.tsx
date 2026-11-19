@@ -56,6 +56,24 @@ export default function EvidenceBoardPage() {
 
   useEffect(() => { setLastRoute('/case/001/evidence') }, [setLastRoute])
 
+  useEffect(() => {
+    if (!hydrated || tab !== 'theories') return
+    const s = useGameStore.getState()
+    if (s.collectedEvidence['EV-X1']) return
+    const actions = evaluateEntityRules(s, { type: 'conclusionOpened' }, CASE_001)
+    dispatchEntityActions(actions, s, s.investigator.name)
+    if (!useGameStore.getState().collectedEvidence['EV-X1']) plantEvidence('EV-X1')
+  }, [hydrated, tab, plantEvidence])
+
+  // ER-06 needs 3 valid links AND stage 2; re-check when either changes, not only on a new link
+  const validLinkCount = links.filter((l) => l.verdict === 'valid').length
+  useEffect(() => {
+    if (!hydrated || validLinkCount < 3) return
+    const s = useGameStore.getState()
+    const actions = evaluateEntityRules(s, { type: 'linksReached', count: validLinkCount }, CASE_001)
+    dispatchEntityActions(actions, s, s.investigator.name, (line) => setOverlayText(line))
+  }, [hydrated, validLinkCount, entity.stage])
+
   const dispatchStore = {
     addEntityMessage, disturbEvidence, plantEvidence,
     lockObject, unlockObject, fireRule, addAttention,
@@ -112,9 +130,13 @@ export default function EvidenceBoardPage() {
     const board = boardRef.current
     if (!board) return
 
-    const rect = board.getBoundingClientRect()
+    // Card positions are in board-content coordinates, so add the board's scroll offset
+    const toBoard = (ev: PointerEvent) => {
+      const rect = board.getBoundingClientRect()
+      return { x: ev.clientX - rect.left + board.scrollLeft, y: ev.clientY - rect.top + board.scrollTop }
+    }
     const onMove = (ev: PointerEvent) => {
-      setPendingTo({ x: ev.clientX - rect.left, y: ev.clientY - rect.top })
+      setPendingTo(toBoard(ev))
     }
     const onUp = (ev: PointerEvent) => {
       document.removeEventListener('pointermove', onMove)
@@ -123,8 +145,7 @@ export default function EvidenceBoardPage() {
       setPendingTo(null)
 
       // Find which card (if any) the pointer ended on
-      const bx = ev.clientX - rect.left
-      const by = ev.clientY - rect.top
+      const { x: bx, y: by } = toBoard(ev)
       const target = collectedItems.find((c) => {
         const p = allPositions[c.id]
         return bx >= p.x && bx <= p.x + 120 && by >= p.y - 10 && by <= p.y + 100
@@ -175,6 +196,7 @@ export default function EvidenceBoardPage() {
       plantEvidence('EV-X1')
     }
     setTheory(theory)
+    useGameStore.setState({ verdict: undefined })
     router.push('/case/001/conclusion')
   }
 

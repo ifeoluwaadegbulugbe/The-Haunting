@@ -37,7 +37,7 @@ export default function WitnessPage() {
   const state = useGameStore((s) => s)
   const {
     witnessChats, witnessTrust, collectedEvidence, revealedFacts,
-    presentedEvidence, investigator, entity,
+    presentedEvidence, investigator, 
     setLastRoute, addChatTurn, setTrust, revealFact,
     markEvidencePresented, addAttention, addEntityMessage,
     disturbEvidence, plantEvidence, lockObject, unlockObject, fireRule,
@@ -109,8 +109,9 @@ export default function WitnessPage() {
       trust,
       recentTurns: (turns.slice(-8) as Array<{ role: 'player' | 'witness'; text: string; at: number }>).map((t) => ({
         role: t.role,
-        text: t.text,
-      })),
+        text: String(t.text ?? '').slice(0, 300),
+      }))
+      .filter((t) => t.text.length > 0),
     }
 
     try {
@@ -120,14 +121,17 @@ export default function WitnessPage() {
         body: JSON.stringify({ witnessId, message, presentedEvidenceId: evidenceId, snapshot }),
       })
 
-      const data = await res.json() as {
-        reply: string
+      const data = (await res.json().catch(() => ({}))) as {
+        reply?: unknown
         newlyRevealed?: Array<{ factId: string; statement: string }>
         trustDelta?: number
         mood?: string
       }
+      if (!res.ok || typeof data.reply !== 'string' || !data.reply.trim()) {
+        throw new Error('bad witness response')
+      }
 
-      addChatTurn(witnessId, { role: 'witness', text: data.reply, at: Date.now() })
+      addChatTurn(witnessId, { role: 'witness', text: data.reply as string, at: Date.now() })
 
       if (data.trustDelta && firstTimePresented) {
         setTrust(witnessId, trust + data.trustDelta)
@@ -295,20 +299,6 @@ export default function WitnessPage() {
         />
       )}
 
-      {/* ER-05 entity message is handled by NotificationTray in layout via entity.messages */}
-      {entity.messages.length > 0 && (
-        <div className="fixed bottom-4 left-4 z-30 max-w-xs">
-          {entity.messages.slice(-1).map((msg) => (
-            <p
-              key={msg.id}
-              className="font-caveat text-sm px-4 py-3 rounded-sm border"
-              style={{ background: 'rgba(14,12,16,0.9)', borderColor: 'var(--entity)', color: 'var(--entity-glow)' }}
-            >
-              {msg.text}
-            </p>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

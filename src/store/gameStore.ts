@@ -322,7 +322,11 @@ export const useGameStore = create<GameStore>()(
       }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {
-          console.warn('[store] rehydration error:', error)
+          console.warn('[store] save could not be read; starting fresh')
+          setTimeout(() => {
+            try { window.localStorage.removeItem('haunting-save-v1') } catch { /* ignore */ }
+            void useGameStore.persist.rehydrate()
+          }, 0)
           return
         }
         if (!state) return

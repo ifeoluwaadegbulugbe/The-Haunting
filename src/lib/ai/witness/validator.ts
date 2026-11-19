@@ -18,7 +18,8 @@ export function validateReply(
   // 1. JSON parse + schema
   let parsed: WitnessReply
   try {
-    parsed = WitnessReplySchema.parse(JSON.parse(raw))
+    const unfenced = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
+    parsed = WitnessReplySchema.parse(JSON.parse(unfenced))
   } catch {
     return { ok: false, reason: 'JSON parse or schema failure' }
   }

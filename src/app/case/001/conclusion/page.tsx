@@ -30,13 +30,13 @@ export default function ConclusionPage() {
 
   // ER-06b fail-safe: plant EV-X1 whenever the Conclusion is opened without it
   useEffect(() => {
-    if (!hydrated || collectedEvidence['EV-X1']) return
+    if (!hydrated || !theory || collectedEvidence['EV-X1']) return
     const s = useGameStore.getState()
     const actions = evaluateEntityRules(s, { type: 'conclusionOpened' }, CASE_001)
     dispatchEntityActions(actions, s, s.investigator.name)
     // Belt and braces: the false lead must always exist so it can be disproved
     if (!useGameStore.getState().collectedEvidence['EV-X1']) plantEvidence('EV-X1')
-  }, [hydrated, collectedEvidence, plantEvidence])
+  }, [hydrated, theory, collectedEvidence, plantEvidence])
 
   // Optional AI narration of the (already scored) result; the static text stays on any failure
   useEffect(() => {
@@ -138,7 +138,7 @@ export default function ConclusionPage() {
           <ReportCard
             result={result}
             narration={narration}
-            onReplay={() => { resetStore(); router.push('/') }}
+            onReplay={() => { router.push('/'); resetStore() }}
             onHQ={() => router.push('/hq')}
           />
         </main>

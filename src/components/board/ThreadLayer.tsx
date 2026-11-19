@@ -46,7 +46,7 @@ export function ThreadLayer({ links, positions, pendingFrom, pendingTo }: Thread
         const opacity = link.verdict === 'valid' ? 0.85 : 0.6
 
         return (
-          <g key={i}>
+          <g key={i} data-thread={link.verdict}>
             <path
               d={path}
               fill="none"

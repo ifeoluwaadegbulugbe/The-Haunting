@@ -12,7 +12,7 @@ export const SCENE_OBJECTS: SceneObject[] = [
     description:
       'An old rotary telephone mounted beside the fireplace. ' +
       'A faded label reads "Ext 2 — Cellar."',
-    hotspot: { x: 18, y: 55, r: 5 },
+    hotspot: { x: 16.1, y: 61, r: 5 },
     locationId: 'study',
     yieldsEvidence: ['EV-01'],
     relatedCharacters: ['clara'],
@@ -25,7 +25,7 @@ export const SCENE_OBJECTS: SceneObject[] = [
     description:
       'A framed Christmas photograph on the mantelpiece. ' +
       'The right edge has been torn away — a figure is missing.',
-    hotspot: { x: 50, y: 30, r: 5 },
+    hotspot: { x: 74.1, y: 37, r: 4.5 },
     locationId: 'study',
     yieldsEvidence: ['EV-02'],
     relatedCharacters: ['edmund', 'clara', 'lily', 'julian'],
@@ -37,7 +37,7 @@ export const SCENE_OBJECTS: SceneObject[] = [
     description:
       "A leather-bound diary on the writing desk. Clara's handwriting fills the pages — " +
       'except the last few, which have been torn out. A small key is taped inside the back cover.',
-    hotspot: { x: 70, y: 60, r: 5 },
+    hotspot: { x: 62.5, y: 61, r: 5 },
     locationId: 'study',
     yieldsEvidence: ['EV-03'],
     relatedCharacters: ['clara', 'julian'],
@@ -50,7 +50,7 @@ export const SCENE_OBJECTS: SceneObject[] = [
     description:
       'Three yellowed newspaper clippings pinned to the wall. ' +
       "They report the official account of the family's disappearance.",
-    hotspot: { x: 85, y: 35, r: 4.5 },
+    hotspot: { x: 50, y: 63, r: 4.5 },
     locationId: 'study',
     yieldsEvidence: ['EV-04'],
     relatedCharacters: ['julian', 'dorothea'],
@@ -62,7 +62,7 @@ export const SCENE_OBJECTS: SceneObject[] = [
     description:
       'A brass mantel clock. Its hands are frozen at 11:13. ' +
       'Something appears to be hidden behind it.',
-    hotspot: { x: 50, y: 48, r: 4.5 },
+    hotspot: { x: 21.4, y: 35, r: 4.5 },
     locationId: 'study',
     yieldsEvidence: ['EV-08'],
     discoveryCondition: {
@@ -76,7 +76,7 @@ export const SCENE_OBJECTS: SceneObject[] = [
     name: 'Study Recorder',
     description:
       'A small cassette recorder on the desk. The tape is still inside.',
-    hotspot: { x: 65, y: 50, r: 4.5 },
+    hotspot: { x: 35.7, y: 66, r: 4.5 },
     locationId: 'study',
     yieldsEvidence: ['EV-07'],
     discoveryCondition: {
@@ -92,7 +92,7 @@ export const SCENE_OBJECTS: SceneObject[] = [
     description:
       'A wooden cabinet with a small keyhole. It is locked. ' +
       "The key from Clara's diary fits.",
-    hotspot: { x: 32, y: 65, r: 5 },
+    hotspot: { x: 50, y: 82, r: 5 },
     locationId: 'study',
     yieldsEvidence: ['EV-05', 'EV-06'],
     discoveryCondition: {
@@ -107,7 +107,7 @@ export const SCENE_OBJECTS: SceneObject[] = [
     name: "Lily's Belongings",
     description:
       "A small pile of a child's things: a coat, some books, a crayon drawing.",
-    hotspot: { x: 20, y: 75, r: 4.5 },
+    hotspot: { x: 11.6, y: 76, r: 4.5 },
     locationId: 'study',
     yieldsEvidence: ['EV-09'],
     discoveryCondition: {
@@ -122,7 +122,7 @@ export const SCENE_OBJECTS: SceneObject[] = [
     name: 'Study Rug',
     description:
       'A heavy Persian rug. One corner is raised slightly, as if something is beneath it.',
-    hotspot: { x: 50, y: 80, r: 5 },
+    hotspot: { x: 34.8, y: 88, r: 5 },
     locationId: 'study',
     yieldsEvidence: ['EV-10'],
     discoveryCondition: {

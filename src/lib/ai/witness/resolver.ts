@@ -85,15 +85,16 @@ export function resolveWitnessTurn(
   const effectiveTrust = Math.min(100, Math.max(0, input.snapshot.trust + trustDelta))
   const state = snapshotToState(input, effectiveTrust)
 
-  const allowedFacts: WitnessFact[] = []
-  const lockedFacts: WitnessFact[] = []
-
-  for (const fact of witness.facts) {
-    if (evaluateCondition(fact.revealWhen, state)) {
-      allowedFacts.push(fact)
-    } else {
-      lockedFacts.push(fact)
-    }
+  // Facts can depend on other facts (M4 -> M5 -> M6). Treat facts unlocked this turn
+  // as revealed and re-evaluate until nothing new unlocks, so the chain lands in one reply.
+  let allowedFacts: WitnessFact[] = []
+  let lockedFacts: WitnessFact[] = []
+  for (let pass = 0; pass < witness.facts.length + 1; pass++) {
+    allowedFacts = witness.facts.filter((f) => evaluateCondition(f.revealWhen, state))
+    lockedFacts = witness.facts.filter((f) => !allowedFacts.includes(f))
+    const newly = allowedFacts.filter((f) => !state.revealedFacts.includes(f.id))
+    if (newly.length === 0) break
+    state.revealedFacts = [...state.revealedFacts, ...newly.map((f) => f.id)]
   }
 
   // Active lie lines: facts that are allowed but whose lieAllowedUntil is not yet met

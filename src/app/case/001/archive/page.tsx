@@ -11,6 +11,7 @@ import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { selectUnlockedSections, selectProgress, selectRank } from '@/store/selectors'
 import { evaluateCondition } from '@/lib/engine/conditions'
+import { evaluateEntityRules, dispatchEntityActions } from '@/lib/entity'
 import { CASE_001 } from '@/data/case001'
 import type { DigitalRecord } from '@/types'
 
@@ -90,6 +91,12 @@ export default function ArchivePage() {
       collectEvidence(record.yieldsEvidence)
       const ev = CASE_001.evidence.find((e) => e.id === record.yieldsEvidence)
       if (ev) addAttention(ev.relevance === 'core' ? 6 : 3)
+      const s = useGameStore.getState()
+      dispatchEntityActions(
+        evaluateEntityRules(s, { type: 'evidenceCollected', ref: record.yieldsEvidence }, CASE_001),
+        s,
+        s.investigator.name
+      )
     }
   }
 

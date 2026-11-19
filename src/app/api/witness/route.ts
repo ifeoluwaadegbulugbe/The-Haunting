@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
   const provider = getProvider()
 
   try {
-    raw = await provider.complete(prompt, { temperature: 0.6, maxTokens: 300 })
+    raw = await provider.complete(prompt, { temperature: 0.6, maxTokens: 300, json: true })
   } catch {
     providerFailed = true
   }
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     // Retry with stricter suffix
     const strictPrompt = prompt + '\n\nREMINDER: Return ONLY valid JSON. No text outside the JSON object.'
     try {
-      const raw2 = await provider.complete(strictPrompt, { temperature: 0.3, maxTokens: 300 })
+      const raw2 = await provider.complete(strictPrompt, { temperature: 0.3, maxTokens: 300, json: true })
       validatedReply = validateReply(raw2, allowedFactIds, lockedFacts)
     } catch {
       providerFailed = true

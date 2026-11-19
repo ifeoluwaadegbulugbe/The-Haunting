@@ -44,6 +44,7 @@ export function EvidenceCard({
   return (
     <div
       ref={ref}
+      data-card={evidence.id}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -54,6 +55,7 @@ export function EvidenceCard({
         width: '120px',
         cursor: isAnchor ? 'default' : 'grab',
         zIndex: 5,
+        touchAction: 'none',
       }}
     >
       {/* Polaroid-style card */}
@@ -72,7 +74,7 @@ export function EvidenceCard({
         >
           {evidence.assetPath ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={evidence.assetPath} alt={evidence.name} className="w-full h-full object-cover" />
+            <img src={evidence.assetPath} alt={evidence.name} draggable={false} className="w-full h-full object-cover pointer-events-none" />
           ) : (
             <span className="font-inter text-[10px] text-parchment-dark opacity-50 text-center px-1 leading-tight">
               {evidence.id}
@@ -88,7 +90,7 @@ export function EvidenceCard({
       {/* Pin (drag-to-connect handle) */}
       <div
         data-pin="true"
-        onPointerDown={(e) => { e.stopPropagation(); onPinDrag(evidence.id, e) }}
+        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); onPinDrag(evidence.id, e) }}
         className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full cursor-crosshair"
         style={{
           background: isAnchor ? 'var(--gold)' : 'var(--thread)',

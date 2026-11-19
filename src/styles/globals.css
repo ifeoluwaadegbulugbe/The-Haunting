@@ -1,5 +1,8 @@
 @import './tokens.css';
 @import 'tailwindcss';
+/* Tailwind v4 only reads the JS config when told to; without this the
+   project colours (parchment, gold, burgundy…) and fonts do not exist */
+@config '../../tailwind.config.ts';
 
 /* ── Base ────────────────────────────────────────────────────────────── */
 *,

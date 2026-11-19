@@ -34,7 +34,7 @@ export function TimelineSlot({
         <div className="flex items-start justify-between gap-2">
           <p className="font-inter text-xs text-parchment leading-snug">{event.label}</p>
           <button
-            onClick={() => onClear(slotIndex)}
+            onClick={(e) => { e.stopPropagation(); onClear(slotIndex) }}
             aria-label="Remove event from slot"
             className="flex-shrink-0 text-parchment-dark hover:text-parchment text-xs cursor-pointer"
             style={{ background: 'none', border: 'none' }}

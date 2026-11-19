@@ -3,7 +3,7 @@
 export interface AIProvider {
   complete(
     prompt: string,
-    options: { temperature: number; maxTokens: number }
+    options: { temperature: number; maxTokens: number; json?: boolean }
   ): Promise<string>
 }
 
@@ -52,7 +52,7 @@ export class GeminiProvider implements AIProvider {
 
   async complete(
     prompt: string,
-    options: { temperature: number; maxTokens: number }
+    options: { temperature: number; maxTokens: number; json?: boolean }
   ): Promise<string> {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 12000)
@@ -71,6 +71,7 @@ export class GeminiProvider implements AIProvider {
           generationConfig: {
             temperature: options.temperature,
             maxOutputTokens: options.maxTokens,
+            ...(options.json ? { responseMimeType: 'application/json' } : {}),
           },
         }),
       })
@@ -100,7 +101,7 @@ export class GroqProvider implements AIProvider {
 
   async complete(
     prompt: string,
-    options: { temperature: number; maxTokens: number }
+    options: { temperature: number; maxTokens: number; json?: boolean }
   ): Promise<string> {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 12000)
@@ -118,6 +119,7 @@ export class GroqProvider implements AIProvider {
           messages: [{ role: 'user', content: prompt }],
           temperature: options.temperature,
           max_tokens: options.maxTokens,
+          ...(options.json ? { response_format: { type: 'json_object' } } : {}),
         }),
       })
 

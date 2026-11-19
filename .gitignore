@@ -25,3 +25,7 @@ Thumbs.db
 
 # original uncompressed audio (MP3s in public/ are what ships)
 audio-source/
+
+# Playwright output
+test-results/
+playwright-report/

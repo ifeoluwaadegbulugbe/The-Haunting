@@ -26,6 +26,7 @@ const NAV_LINKS = [
   { label: 'Archive', href: '/case/001/archive', sectionKey: 'archive' as const },
   { label: 'Evidence', href: '/case/001/evidence', sectionKey: null },
   { label: 'Witnesses', href: '/case/001/witnesses/margaret', sectionKey: 'witnesses' as const },
+  { label: 'Conclude', href: '/case/001/conclusion', sectionKey: 'conclusion' as const },
 ]
 
 export function TopBar({
