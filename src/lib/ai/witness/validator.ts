@@ -13,8 +13,13 @@ export type WitnessReply = z.infer<typeof WitnessReplySchema>
 export function validateReply(
   raw: string,
   allowedFactIds: string[],
-  lockedFacts: WitnessFact[]
+  lockedFacts: WitnessFact[],
+  /** Statements of the allowed facts. Words they contain may be said even if a locked fact also lists them. */
+  allowedStatements: string[] = []
 ): { ok: boolean; reply?: WitnessReply; reason?: string } {
+  const wordIn = (word: string, text: string) =>
+    new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(text)
+  const allowedText = allowedStatements.join(' ')
   // 1. JSON parse + schema
   let parsed: WitnessReply
   try {
@@ -34,7 +39,7 @@ export function validateReply(
   // 3. No forbidden tokens from locked facts (whole-word match)
   for (const fact of lockedFacts) {
     for (const token of fact.forbiddenTokens) {
-      if (!token) continue
+      if (!token || wordIn(token, allowedText)) continue
       const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       const tokenRegex = new RegExp(`\\b${escaped}\\b`, 'i')
       if (tokenRegex.test(parsed.reply)) {

@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
   const { allowedFacts, lockedFacts, trustDelta, revealGuarantee } = resolverOutput
 
   const allowedFactIds = allowedFacts.map((f) => f.id)
+  const allowedStatements = allowedFacts.map((f) => f.statement)
 
   // Find presented evidence detail
   const presentedEvidence = presentedEvidenceId
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
     : undefined
 
   // Build prompt
-  const prompt = buildWitnessPrompt(witness, resolverOutput, snapshot.recentTurns, presentedEvidence, message)
+  const prompt = buildWitnessPrompt(witness, resolverOutput, snapshot.recentTurns, presentedEvidence, message, snapshot.revealedFactIds)
 
   // Call provider with timeout
   let raw = ''
@@ -119,14 +120,14 @@ export async function POST(request: NextRequest) {
   }
 
   // Validate reply; retry once if failed
-  let validatedReply = providerFailed ? null : validateReply(raw, allowedFactIds, lockedFacts)
+  let validatedReply = providerFailed ? null : validateReply(raw, allowedFactIds, lockedFacts, allowedStatements)
 
   if (!providerFailed && validatedReply && !validatedReply.ok) {
     // Retry with stricter suffix
     const strictPrompt = prompt + '\n\nREMINDER: Return ONLY valid JSON. No text outside the JSON object.'
     try {
       const raw2 = await provider.complete(strictPrompt, { temperature: 0.3, maxTokens: 1024, json: true })
-      validatedReply = validateReply(raw2, allowedFactIds, lockedFacts)
+      validatedReply = validateReply(raw2, allowedFactIds, lockedFacts, allowedStatements)
       if (!validatedReply.ok) logFailure(witnessId, 'validation', validatedReply.reason)
     } catch (e) {
       providerFailed = true
@@ -141,7 +142,8 @@ export async function POST(request: NextRequest) {
       presented: Boolean(presentedEvidenceId),
       trust: snapshot.trust,
     })
-    const newlyRevealed = buildRevealGuarantee(revealGuarantee)
+    // Facts that must be told are guaranteed; small talk waits for a real reply
+    const newlyRevealed = buildRevealGuarantee(revealGuarantee.filter(mustBeTold))
     const fullReply = newlyRevealed.length > 0
       ? `${fallbackReply} ${newlyRevealed.map((r) => r.statement).join(' ')}`
       : fallbackReply
@@ -156,24 +158,36 @@ export async function POST(request: NextRequest) {
     })
   }
 
-  // Build guarantee lines
   const usedFactIds = validatedReply.reply!.usedFactIds
+  // Reveal guarantee: a fact that must be told and that the model left out is added as its authored line.
+  // Facts that are always available are small talk; they are never forced into a reply.
+  const appended = revealGuarantee.filter((f) => mustBeTold(f) && !usedFactIds.includes(f.id))
+  // Everything newly told this turn is recorded, whether the model said it or the guarantee
+  // added it. Otherwise the same fact is treated as new, and repeated, on every turn.
   const newlyRevealed = buildRevealGuarantee(
-    revealGuarantee.filter((f) => !usedFactIds.includes(f.id))
+    revealGuarantee.filter((f) => usedFactIds.includes(f.id) || appended.includes(f))
   )
 
-  // Append guarantee to reply if needed
-  const finalReply = newlyRevealed.length > 0
-    ? `${validatedReply.reply!.reply} ${newlyRevealed.map((r) => r.statement).join(' ')}`
+  const finalReply = appended.length > 0
+    ? `${validatedReply.reply!.reply} ${appended.map((f) => f.statement).join(' ')}`
     : validatedReply.reply!.reply
 
   return NextResponse.json({
     reply: finalReply,
-    usedFactIds: [...usedFactIds, ...newlyRevealed.map((r) => r.factId)],
+    usedFactIds: [...new Set([...usedFactIds, ...appended.map((f) => f.id)])],
     newlyRevealed,
     trustDelta,
     mood: validatedReply.reply!.mood,
   })
+}
+
+/**
+ * A fact the player must be told: one they earned (evidence, trust or another fact), or a
+ * statement the case depends on, such as a lie that a contradiction is built on.
+ * Everything else is small talk and is never forced into a reply.
+ */
+function mustBeTold(f: { revealWhen: { allOf?: unknown[]; anyOf?: unknown[] }; yieldsStatementId?: string }) {
+  return (f.revealWhen.allOf?.length ?? 0) > 0 || (f.revealWhen.anyOf?.length ?? 0) > 0 || Boolean(f.yieldsStatementId)
 }
 
 /** Server log only: why a scripted line was used. Never the key, the prompt or the player's message. */

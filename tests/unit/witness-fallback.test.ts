@@ -4,6 +4,7 @@ import { getProvider, MockProvider } from '@/lib/ai/witness/provider'
 import { CASE_001 } from '@/data/case001'
 import { buildWitnessPrompt } from '@/lib/ai/witness/prompt-builder'
 import { resolveWitnessTurn } from '@/lib/ai/witness/resolver'
+import { validateReply } from '@/lib/ai/witness/validator'
 
 const margaret = CASE_001.witnesses.find((w) => w.id === 'margaret')!
 const lines = margaret.fallbackLines
@@ -50,5 +51,21 @@ describe('getProvider', () => {
     vi.stubEnv('AI_API_KEY', 'x')
     vi.stubEnv('AI_MODEL', '')
     await expect(getProvider().complete('hi', { temperature: 0, maxTokens: 10 })).rejects.toThrow()
+  })
+})
+
+describe('validateReply with overlapping facts', () => {
+  const m3 = margaret.facts.find((f) => f.id === 'M3')!
+  const m5 = margaret.facts.find((f) => f.id === 'M5')!
+  const reply = (text: string) => JSON.stringify({ reply: text, usedFactIds: ['M5'], mood: 'afraid' })
+
+  it('allows a word that an allowed fact states, even if a locked fact lists it', () => {
+    expect(validateReply(reply("It was Julian's car."), ['M5'], [m3], [m5.statement]).ok).toBe(true)
+  })
+
+  it('still blocks locked words that no allowed fact contains', () => {
+    const locked = m3.forbiddenTokens.find((t) => !new RegExp(`\\b${t}\\b`, 'i').test(m5.statement))
+    if (!locked) return
+    expect(validateReply(reply(`Something about ${locked}.`), ['M5'], [m3], [m5.statement]).ok).toBe(false)
   })
 })

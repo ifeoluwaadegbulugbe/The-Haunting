@@ -170,3 +170,41 @@ describe('/api/entity', () => {
     expect(res.status).toBe(400)
   })
 })
+
+describe('/api/witness remembers what was said', () => {
+  const fresh = (revealed: string[]) => witnessBody({
+    message: 'How well did you know the Ashworths?',
+    snapshot: { collectedEvidenceIds: [], revealedFactIds: revealed, presentedEvidenceIds: [], trust: 50, recentTurns: [] },
+  })
+
+  it('records a fact the model stated itself, without repeating it', async () => {
+    complete.mockResolvedValue(JSON.stringify({ reply: 'I live up the lane. Known them for years.', usedFactIds: ['M1'], mood: 'calm' }))
+    const data = await (await witnessPOST(req('/api/witness', fresh([])))).json()
+    expect(data.newlyRevealed.map((r: { factId: string }) => r.factId)).toEqual(['M1'])
+    // Small talk (M2) is not forced into the reply
+    expect(data.reply).toBe('I live up the lane. Known them for years.')
+  })
+
+  it('does not append facts that were already told', async () => {
+    complete.mockResolvedValue(JSON.stringify({ reply: 'Such a lovely family.', usedFactIds: [], mood: 'calm' }))
+    const data = await (await witnessPOST(req('/api/witness', fresh(['M1', 'M2'])))).json()
+    expect(data.reply).toBe('Such a lovely family.')
+    expect(data.newlyRevealed).toEqual([])
+  })
+
+  it("records a witness's opening lie even if the model does not cite it (contradictions need it)", async () => {
+    complete.mockResolvedValue(JSON.stringify({ reply: 'Good evening.', usedFactIds: [], mood: 'calm' }))
+    const body = witnessBody({ witnessId: 'julian', snapshot: { collectedEvidenceIds: [], revealedFactIds: [], presentedEvidenceIds: [], trust: 50, recentTurns: [] } })
+    const data = await (await witnessPOST(req('/api/witness', body))).json()
+    const told = data.newlyRevealed.map((r: { factId: string }) => r.factId)
+    expect(told).toEqual(expect.arrayContaining(['J2', 'J3']))
+    expect(told).not.toContain('J1')
+  })
+
+  it('still guarantees an earned fact the model left out', async () => {
+    complete.mockResolvedValue(JSON.stringify({ reply: 'Oh dear.', usedFactIds: [], mood: 'afraid' }))
+    const data = await (await witnessPOST(req('/api/witness', witnessBody({ presentedEvidenceId: 'EV-11' })))).json()
+    expect(data.newlyRevealed.map((r: { factId: string }) => r.factId)).toContain('M4')
+    expect(data.reply).toContain('Ashworth House')
+  })
+})
