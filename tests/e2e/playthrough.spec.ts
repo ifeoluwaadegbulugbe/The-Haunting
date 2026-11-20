@@ -26,6 +26,12 @@ async function inspect(page: Page, name: string) {
   await clearOverlays(page)
   await hotspot(page, name).click()
   await page.getByRole('button', { name: 'Inspect', exact: true }).click()
+  await clearOverlays(page) // the telephone rings first
+  // The camera zooms in and the item opens in a close-up
+  const closeUp = page.getByRole('dialog', { name: `Close-up: ${name}` })
+  await expect(closeUp).toBeVisible()
+  await closeUp.getByRole('button', { name: 'Return to the study' }).click()
+  await expect(closeUp).toBeHidden()
   await clearOverlays(page)
   await expect(hotspot(page, name)).toHaveAttribute('aria-pressed', 'true')
 }
@@ -76,7 +82,7 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
   await page.goto('/case/001/archive')
   for (const tab of ['Telephone Records', "Edmund's Mobile", "Clara's Laptop"]) {
     await page.getByRole('button', { name: tab, exact: true }).click()
-    for (;;) {
+    for (; ;) {
       const btn = page.getByRole('button', { name: /^(Log as evidence|Recover)$/ }).first()
       if (!(await btn.isVisible().catch(() => false))) break
       await btn.click()
@@ -101,7 +107,7 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
 
   // Contradictions: confirm every one that is offered
   await page.goto('/case/001/evidence')
-  for (;;) {
+  for (; ;) {
     await clearOverlays(page)
     const btn = page.locator('button:visible', { hasText: 'Confirm contradiction' }).first()
     if (!(await btn.isVisible().catch(() => false))) break

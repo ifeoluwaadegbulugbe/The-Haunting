@@ -1,6 +1,7 @@
 'use client'
 
 import { Modal, Button } from '@/components/ui'
+import { EvidenceVisual } from './EvidenceVisual'
 import type { Evidence } from '@/types'
 
 interface EvidenceDetailModalProps {
@@ -60,6 +61,15 @@ export function EvidenceDetailModal({
             <Badge label="MANIPULATED" color="var(--thread)" />
           )}
         </div>
+
+        {!disturbed && (
+          <EvidenceVisual
+            evidenceId={evidence.id}
+            assetPath={evidence.assetPath}
+            name={evidence.name}
+            compact
+          />
+        )}
 
         <p className="font-inter text-sm text-parchment leading-relaxed">
           {disturbed ? garble(evidence.description) : evidence.description}

@@ -12,6 +12,7 @@ interface ObjectPanelProps {
   isLocked: boolean
   lockedMessage: string
   onInspect: (object: SceneObject) => void
+  onExamine?: (object: SceneObject) => void
   onClose: () => void
 }
 
@@ -22,6 +23,7 @@ export function ObjectPanel({
   isLocked,
   lockedMessage,
   onInspect,
+  onExamine,
   onClose,
 }: ObjectPanelProps) {
   if (!object) return null
@@ -91,8 +93,8 @@ export function ObjectPanel({
           {/* Action button */}
           <div className="mt-auto pt-2">
             {alreadyCollected ? (
-              <Button variant="secondary" disabled tooltip="Already collected">
-                Collected
+              <Button variant="secondary" onClick={() => (onExamine ?? onInspect)(object)}>
+                Examine
               </Button>
             ) : isLocked ? (
               <Button variant="secondary" disabled tooltip={lockedMessage}>

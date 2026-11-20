@@ -8,6 +8,7 @@ import { Hotspot } from '@/components/scene/Hotspot'
 import { ObjectPanel } from '@/components/scene/ObjectPanel'
 import { EvidenceTray } from '@/components/scene/EvidenceTray'
 import { EntityOverlay } from '@/components/entity/EntityOverlay'
+import { ItemCloseUp } from '@/components/scene/ItemCloseUp'
 import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { evaluateCondition, conditionMessage } from '@/lib/engine/conditions'
@@ -19,6 +20,11 @@ import type { HotspotState } from '@/components/scene/Hotspot'
 
 // study-scene.jpg is 1376 x 768
 const SCENE_RATIO = 1376 / 768
+const ZOOM_SCALE = 2.4
+const ZOOM_MS = 700
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 export default function ScenePage() {
   const hydrated = useHydrated()
@@ -50,6 +56,9 @@ export default function ScenePage() {
   const [showPhoneOverlay, setShowPhoneOverlay] = useState(false)
   const [entityOverlayText, setEntityOverlayText] = useState<string | null>(null)
   const [lockNotice, setLockNotice] = useState<string | null>(null)
+  // Camera push-in towards the object being examined, then the close-up
+  const [zoomObject, setZoomObject] = useState<SceneObject | null>(null)
+  const [closeUp, setCloseUp] = useState<{ object: SceneObject; newlyFound: boolean } | null>(null)
 
   // Start narrow screens centred on the desk
   useEffect(() => {
@@ -100,16 +109,36 @@ export default function ScenePage() {
     setSelectedObject(obj)
   }
 
+  // Zoom into an object, then run the next step once the camera has arrived
+  const zoomThen = (obj: SceneObject, next: () => void) => {
+    setSelectedObject(null)
+    setZoomObject(obj)
+    playSound('page-rustle', useGameStore.getState().ui.muted, 0.4)
+    setTimeout(next, prefersReducedMotion() ? 0 : ZOOM_MS)
+  }
+
   const handleInspect = (obj: SceneObject) => {
-    // ER-01: telephone first inspection
-    if (obj.id === 'OBJ-telephone' && !entity.firedRules.includes('ER-01')) {
-      fireRule('ER-01')
-      playSound('phone-ring', useGameStore.getState().ui.muted)
-      setShowPhoneOverlay(true)
-      // Collect after overlay dismisses (handled in onDismiss)
-      return
-    }
-    doCollect(obj)
+    zoomThen(obj, () => {
+      // ER-01: telephone first inspection rings before the close-up
+      if (obj.id === 'OBJ-telephone' && !useGameStore.getState().entity.firedRules.includes('ER-01')) {
+        fireRule('ER-01')
+        playSound('phone-ring', useGameStore.getState().ui.muted)
+        setShowPhoneOverlay(true)
+        return // collected when the overlay is dismissed
+      }
+      const newlyFound = doCollect(obj)
+      setCloseUp({ object: obj, newlyFound })
+    })
+  }
+
+  // Look again at something already collected
+  const handleExamine = (obj: SceneObject) => {
+    zoomThen(obj, () => setCloseUp({ object: obj, newlyFound: false }))
+  }
+
+  const closeCloseUp = () => {
+    setCloseUp(null)
+    setZoomObject(null)
   }
 
   const dispatchStore = {
@@ -117,14 +146,16 @@ export default function ScenePage() {
     lockObject, unlockObject, fireRule, addAttention,
   }
 
-  const doCollect = (obj: SceneObject) => {
+  const doCollect = (obj: SceneObject): boolean => {
+    let newlyFound = false
     discoverObject(obj.id)
     inspectObject(obj.id)
     // Add attention for inspecting
     addAttention(2)
 
     for (const evId of obj.yieldsEvidence) {
-      if (!collectedEvidence[evId]) {
+      if (!useGameStore.getState().collectedEvidence[evId]) {
+        newlyFound = true
         collectEvidence(evId)
         const ev = CASE_001.evidence.find((e) => e.id === evId)
         if (ev) {
@@ -146,13 +177,14 @@ export default function ScenePage() {
 
     expireLocks()
     setSelectedObject(null)
+    return newlyFound
   }
 
   const handleOverlayDismiss = () => {
     setShowPhoneOverlay(false)
     // Now collect the telephone evidence
     const telephoneObj = CASE_001.scene.find((o) => o.id === 'OBJ-telephone')
-    if (telephoneObj) doCollect(telephoneObj)
+    if (telephoneObj) setCloseUp({ object: telephoneObj, newlyFound: doCollect(telephoneObj) })
   }
 
   if (!hydrated) return null
@@ -174,6 +206,11 @@ export default function ScenePage() {
           style={{
             width: `max(100%, calc(100dvh * ${SCENE_RATIO}))`,
             height: `max(100%, calc(100vw / ${SCENE_RATIO}))`,
+            transform: zoomObject ? `scale(${ZOOM_SCALE})` : 'scale(1)',
+            transformOrigin: zoomObject ? `% ${zoomObject.hotspot.y}%` : undefined,
+            transition: prefersReducedMotion()
+              ? 'none'
+              : `transform ${ZOOM_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)`,
           }}
         >
           <Image
@@ -189,15 +226,20 @@ export default function ScenePage() {
             className="absolute inset-0 pointer-events-none"
             style={{ background: 'linear-gradient(to top, rgba(14,12,16,0.5) 0%, rgba(14,12,16,0.1) 60%)' }}
           />
-          {CASE_001.scene.map((obj) => (
-            <Hotspot
-              key={obj.id}
-              object={obj}
-              state={getHotspotState(obj)}
-              onClick={() => handleHotspotClick(obj)}
-              lockedMessage={conditionMessage(obj.id)}
-            />
-          ))}
+          <div
+            className="absolute inset-0 transition-opacity duration-300"
+            style={{ opacity: zoomObject ? 0 : 1, pointerEvents: zoomObject ? 'none' : undefined }}
+          >
+            {CASE_001.scene.map((obj) => (
+              <Hotspot
+                key={obj.id}
+                object={obj}
+                state={getHotspotState(obj)}
+                onClick={() => handleHotspotClick(obj)}
+                lockedMessage={conditionMessage(obj.id)}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -243,6 +285,7 @@ export default function ScenePage() {
               selectedObject ? conditionMessage(selectedObject.id) : ''
             }
             onInspect={handleInspect}
+            onExamine={handleExamine}
             onClose={() => setSelectedObject(null)}
           />
         </div>
@@ -268,6 +311,15 @@ export default function ScenePage() {
           {lockNotice}
         </div>
       )}
+
+      <ItemCloseUp
+        object={closeUp?.object ?? null}
+        evidence={(closeUp?.object.yieldsEvidence ?? [])
+          .map((id) => CASE_001.evidence.find((e) => e.id === id))
+          .filter((e): e is NonNullable<typeof e> => Boolean(e))}
+        newlyFound={closeUp?.newlyFound ?? false}
+        onClose={closeCloseUp}
+      />
 
       {/* ER-08 / other entity overlays */}
       {entityOverlayText && (
