@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback } from 'react'
 import type { Evidence } from '@/types'
+import { audio } from '@/lib/audio/engine'
 
 export interface EvidenceCardProps {
   evidence: Evidence
@@ -18,6 +19,7 @@ export function EvidenceCard({
   const ref = useRef<HTMLDivElement>(null)
   const drag = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null)
   const [localPos, setLocalPos] = useState(position)
+  const [lifted, setLifted] = useState(false)
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (isAnchor) return
@@ -26,6 +28,8 @@ export function EvidenceCard({
     if (target.closest('[data-pin]')) return
     e.currentTarget.setPointerCapture(e.pointerId)
     drag.current = { startX: e.clientX, startY: e.clientY, origX: localPos.x, origY: localPos.y }
+    setLifted(true)
+    audio.sfx('page', 0.35)
   }, [isAnchor, localPos])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
@@ -39,6 +43,8 @@ export function EvidenceCard({
     if (!drag.current) return
     onMove(evidence.id, localPos)
     drag.current = null
+    setLifted(false)
+    audio.sfx('pin', 0.7)
   }, [evidence.id, localPos, onMove])
 
   return (
@@ -54,8 +60,11 @@ export function EvidenceCard({
         top: localPos.y,
         width: '120px',
         cursor: isAnchor ? 'default' : 'grab',
-        zIndex: 5,
+        zIndex: lifted ? 9 : 5,
         touchAction: 'none',
+        transform: lifted ? 'scale(1.07) rotate(-2deg)' : 'scale(1) rotate(0deg)',
+        filter: lifted ? 'drop-shadow(0 18px 18px rgba(14,12,16,0.6))' : 'drop-shadow(0 4px 6px rgba(14,12,16,0.5))',
+        transition: 'transform 0.18s ease, filter 0.18s ease',
       }}
     >
       {/* Polaroid-style card */}

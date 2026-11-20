@@ -8,7 +8,8 @@ export const EvidenceKindSchema = z.enum([
   'physical', 'document', 'photo', 'audio', 'message',
   'email', 'callRecord', 'profile', 'statement',
 ])
-export const RelevanceSchema = z.enum(['core', 'supporting', 'red-herring'])
+// 'optional' = hidden extra clues: they reward thoroughness but never gate progress or score
+export const RelevanceSchema = z.enum(['core', 'supporting', 'red-herring', 'optional'])
 export const DeceptionSchema = z.enum(['cooperative', 'evasive', 'deceptive'])
 export const MoodSchema = z.enum(['calm', 'afraid', 'defensive', 'cold'])
 export const DeviceSchema = z.enum(['mobile', 'laptop', 'telco'])
@@ -132,10 +133,10 @@ export const WitnessSchema = z.object({
   facts: z.array(WitnessFactSchema),
   forbiddenTopics: z.array(z.string()),
   fallbackLines: z.object({
-    greeting:  z.array(z.string()),
-    unknown:   z.array(z.string()),
-    evasive:   z.array(z.string()),
-    pressure:  z.array(z.string()),
+    greeting: z.array(z.string()),
+    unknown: z.array(z.string()),
+    evasive: z.array(z.string()),
+    pressure: z.array(z.string()),
   }),
   trustRules: z.array(z.object({
     on: z.string(),
@@ -184,7 +185,7 @@ export type LinkRule = z.infer<typeof LinkRuleSchema>
 
 export const EntityTriggerSchema = z.object({
   type: z.enum(['objectInspected', 'evidenceCollected', 'contradictionConfirmed',
-                 'factRevealed', 'stageReached', 'linksReached', 'conclusionOpened']),
+    'factRevealed', 'stageReached', 'linksReached', 'conclusionOpened']),
   ref: z.string().optional(),
   count: z.number().optional(),
 })
@@ -239,33 +240,47 @@ export type EntityMessageRecord = z.infer<typeof EntityMessageRecordSchema>
 
 // ── GameState ────────────────────────────────────────────────────────────────
 
+export const AudioSettingsSchema = z.object({
+  master: z.number().min(0).max(1),
+  music: z.number().min(0).max(1),
+  ambient: z.number().min(0).max(1),
+  sfx: z.number().min(0).max(1),
+  muted: z.boolean(),
+})
+
+export type AudioSettings = z.infer<typeof AudioSettingsSchema>
+
 export const GameStateSchema = z.object({
-  version: z.literal(1),
+  // v1 saves are upgraded in place (see store/migrations.ts)
+  version: z.union([z.literal(1), z.literal(2)]),
+  audio: AudioSettingsSchema,
+  seenCinematics: z.array(z.string()),
+  achievements: z.array(z.string()),
   investigator: z.object({
     name: z.string(),
     startedAt: z.number(),
   }),
-  discoveredObjects:  z.array(z.string()),
-  inspectedObjects:   z.array(z.string()),
-  collectedEvidence:  z.record(z.object({
-    at:    z.number(),
+  discoveredObjects: z.array(z.string()),
+  inspectedObjects: z.array(z.string()),
+  collectedEvidence: z.record(z.object({
+    at: z.number(),
     flags: z.array(z.string()),
   })),
-  recoveredRecords:   z.array(z.string()),
+  recoveredRecords: z.array(z.string()),
   witnessChats: z.record(
     z.array(z.object({
       role: z.enum(['player', 'witness']),
       text: z.string(),
-      at:   z.number(),
+      at: z.number(),
     }))
   ),
-  witnessTrust:       z.record(z.number()),
-  revealedFacts:      z.array(z.string()),
-  presentedEvidence:  z.record(z.array(z.string())),
+  witnessTrust: z.record(z.number()),
+  revealedFacts: z.array(z.string()),
+  presentedEvidence: z.record(z.array(z.string())),
   contradictionsFlagged: z.array(z.string()),
   links: z.array(z.object({
-    a:       z.string(),
-    b:       z.string(),
+    a: z.string(),
+    b: z.string(),
     verdict: z.enum(['valid', 'invalid', 'contradiction']),
   })),
   boardPositions: z.record(z.object({
@@ -274,25 +289,25 @@ export const GameStateSchema = z.object({
   })),
   timelinePlacement: z.record(z.string()),
   entity: z.object({
-    attention:    z.number().min(0).max(99),
-    stage:        z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
-    firedRules:   z.array(z.string()),
-    disturbed:    z.array(z.string()),
+    attention: z.number().min(0).max(99),
+    stage: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+    firedRules: z.array(z.string()),
+    disturbed: z.array(z.string()),
     lockedObjects: z.array(z.string()),
     // Lockouts expire after a time or after N further inspections (never permanent)
     locks: z.record(z.object({ until: z.number(), atInspected: z.number() })).default({}),
-    messages:     z.array(EntityMessageRecordSchema),
+    messages: z.array(EntityMessageRecordSchema),
   }),
-  theory:  TheorySchema.optional(),
+  theory: TheorySchema.optional(),
   verdict: z.object({
-    score:     z.number(),
+    score: z.number(),
     breakdown: z.record(z.number()),
-    rank:      z.string(),
+    rank: z.string(),
   }).optional(),
   ui: z.object({
-    lastRoute:  z.string(),
-    muted:      z.boolean(),
-    seenIntro:  z.boolean(),
+    lastRoute: z.string(),
+    muted: z.boolean(),
+    seenIntro: z.boolean(),
   }),
 })
 

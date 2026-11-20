@@ -114,7 +114,7 @@ A single CSS custom property, `--haunt-level` (integer 0–4), tracks the entity
 - Honour `prefers-reduced-motion` by replacing animations with instant fades.
 - **Sound (P1):** low ambient bed, telephone ring, page rustle, heartbeat for entity events.
 - Muted by default until the player first interacts. Persistent mute control in a corner.
-- Use the native `Audio` object (no sound library).
+- Use the Web Audio engine in `src/lib/audio/engine.ts` (no sound library). Music starts after the title-screen "Enter the archive" gate.
 
 ---
 

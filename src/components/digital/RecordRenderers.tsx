@@ -1,3 +1,8 @@
+'use client'
+
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { audio } from '@/lib/audio/engine'
 import type { DigitalRecord } from '@/types'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -102,22 +107,44 @@ export function EmailMessage({ record }: { record: DigitalRecord }) {
 
 export function VoicemailEntry({ record }: { record: DigitalRecord }) {
   const c = record.content as { from: string; to: string; transcript: string; duration: string }
+  const words = c.transcript.split(' ')
+  const [heard, setHeard] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const play = () => {
+    if (playing) return
+    audio.sfx('tape', 0.7)
+    setPlaying(true); setHeard(0)
+    words.forEach((_, i) => setTimeout(() => { setHeard(i + 1); if (i === words.length - 1) setTimeout(() => setPlaying(false), 900) }, 500 + i * 260))
+  }
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3">
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+        <button
+          onClick={play}
+          aria-label={playing ? 'Playing voicemail' : 'Play voicemail'}
+          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 hover:scale-110 transition-transform"
           style={{ background: 'var(--burgundy)', border: '1px solid var(--gold)' }}
         >
-          <span className="text-parchment text-xs">▶</span>
+          <span className="text-parchment text-xs">{playing ? '❚❚' : '▶'}</span>
+        </button>
+        <div className="flex items-end gap-[2px] h-7" aria-hidden="true">
+          {Array.from({ length: 28 }, (_, i) => (
+            <motion.span
+              key={i}
+              className="w-[3px] rounded-sm"
+              style={{ background: 'var(--candle)', height: 4 }}
+              animate={playing ? { height: [4, 6 + ((i * 37) % 20), 4] } : { height: 4 }}
+              transition={playing ? { repeat: Infinity, duration: 0.5 + ((i * 13) % 5) / 10 } : { duration: 0.3 }}
+            />
+          ))}
         </div>
         <div>
           <p className="font-inter text-xs text-parchment">Voicemail from {c.from}</p>
           <p className="font-inter text-xs text-parchment-dark">{formatTs(record.timestamp)} · {c.duration}</p>
         </div>
       </div>
-      <p className="font-caveat text-sm text-parchment-dark italic border-l-2 border-gold pl-3">
-        &quot;{c.transcript}&quot;
+      <p className="font-caveat text-lg text-parchment-dark border-l-2 border-gold pl-3 min-h-8">
+        {heard === 0 ? <span className="opacity-60">Press play to hear the message.</span> : <>&quot;{words.slice(0, heard).join(' ')}{heard === words.length ? '\u201D' : ''}</>}
       </p>
     </div>
   )
@@ -173,14 +200,14 @@ export function NoteEntry({ record }: { record: DigitalRecord }) {
 
 export function RecordContent({ record }: { record: DigitalRecord }) {
   switch (record.kind) {
-    case 'call':      return <CallLogEntry record={record} />
-    case 'sms':       return <SmsMessage record={record} />
-    case 'email':     return <EmailMessage record={record} />
+    case 'call': return <CallLogEntry record={record} />
+    case 'sms': return <SmsMessage record={record} />
+    case 'email': return <EmailMessage record={record} />
     case 'voicemail': return <VoicemailEntry record={record} />
-    case 'photo':     return <PhotoEntry record={record} />
-    case 'profile':   return <ProfileEntry record={record} />
-    case 'note':      return <NoteEntry record={record} />
-    default:          return (
+    case 'photo': return <PhotoEntry record={record} />
+    case 'profile': return <ProfileEntry record={record} />
+    case 'note': return <NoteEntry record={record} />
+    default: return (
       <p className="font-inter text-xs text-parchment-dark">{JSON.stringify(record.content)}</p>
     )
   }

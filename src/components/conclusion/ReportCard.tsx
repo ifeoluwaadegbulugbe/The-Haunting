@@ -1,9 +1,12 @@
 import { ParchmentCard, Button } from '@/components/ui'
 import type { VerdictResult } from '@/lib/scoring'
+import { ACHIEVEMENTS } from '@/data/achievements'
 
 interface ReportCardProps {
   result:     VerdictResult
   narration?: string
+  thoroughness?: number
+  achievements?: string[]
   onReplay:   () => void
   onHQ:       () => void
 }
@@ -41,7 +44,7 @@ const CATEGORY_LABELS: Record<string, { label: string; max: number; correct: str
   },
 }
 
-export function ReportCard({ result, narration, onReplay, onHQ }: ReportCardProps) {
+export function ReportCard({ result, narration, thoroughness = 0, achievements = [], onReplay, onHQ }: ReportCardProps) {
   const { score, breakdown, rank } = result
 
   return (
@@ -89,6 +92,29 @@ export function ReportCard({ result, narration, onReplay, onHQ }: ReportCardProp
             </div>
           )
         })}
+      </div>
+
+      {/* Thoroughness and achievements (never part of the score) */}
+      <div className="border-t border-brown pt-4 space-y-3">
+        <div className="flex justify-between items-baseline">
+          <span className="font-inter text-sm text-obsidian font-medium">Hidden details found</span>
+          <span className="font-inter text-sm font-semibold" style={{ color: thoroughness === 4 ? 'var(--verdigris)' : 'var(--brown)' }}>{thoroughness} / 4</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {ACHIEVEMENTS.map((a) => {
+            const got = achievements.includes(a.id)
+            return (
+              <span
+                key={a.id}
+                title={a.description}
+                className="font-inter text-[11px] px-2 py-1 rounded-sm border"
+                style={{ borderColor: got ? 'var(--gold)' : 'rgba(81,65,61,0.3)', color: got ? 'var(--obsidian)' : 'rgba(81,65,61,0.5)', background: got ? 'rgba(165,138,96,0.25)' : 'transparent' }}
+              >
+                {got ? '★ ' : ''}{a.title}
+              </span>
+            )
+          })}
+        </div>
       </div>
 
       {/* Actions */}

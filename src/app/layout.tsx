@@ -3,6 +3,10 @@ import { Cinzel, Cormorant_Garamond, Inter, Caveat } from 'next/font/google'
 import { HydrationGuard } from '@/components/ui/HydrationGuard'
 import { HauntLevelSync } from '@/components/entity/HauntLevelSync'
 import { NotificationTray } from '@/components/entity/NotificationTray'
+import { EntityManifestations } from '@/components/entity/EntityManifestations'
+import { AudioDirector } from '@/components/audio/AudioDirector'
+import { AudioSettings } from '@/components/audio/AudioSettings'
+import { FxLayer } from '@/components/fx/FxLayer'
 import '@/styles/globals.css'
 
 const cinzel = Cinzel({
@@ -50,7 +54,17 @@ export default function RootLayout({
         caveat.variable,
       ].join(' ')}
     >
-      <body><HydrationGuard>{children}</HydrationGuard><HauntLevelSync /><NotificationTray /></body>
+      <body>
+        <HydrationGuard>
+          {children}
+          <AudioDirector />
+          <AudioSettings />
+          <FxLayer />
+        </HydrationGuard>
+        <HauntLevelSync />
+        <NotificationTray />
+        <EntityManifestations />
+      </body>
     </html>
   )
 }

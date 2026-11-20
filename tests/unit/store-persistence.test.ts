@@ -29,8 +29,8 @@ describe('store persistence', () => {
   })
 
   it('Test B2 — version match: migrateState returns state as-is', () => {
-    const v1State = { ...INITIAL_STATE, version: 1 }
-    expect(migrateState(v1State)).toEqual(v1State)
+    const v2State = { ...INITIAL_STATE }
+    expect(migrateState(v2State)).toEqual(v2State)
   })
 
   it('collectEvidence is idempotent — no duplicates on key', () => {

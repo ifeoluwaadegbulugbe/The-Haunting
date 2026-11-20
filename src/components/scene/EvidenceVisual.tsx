@@ -119,7 +119,7 @@ function Diary() {
 
 // ── EV-04 Newspaper clippings ─────────────────────────────────────────────
 
-function Clipping({
+export function Clipping({
   date, headline, body, tilt, className = '',
 }: { date: string; headline: string; body: string; tilt: number; className?: string }) {
   return (
@@ -197,14 +197,16 @@ function Logbook() {
 
 // ── EV-07 Final night recording ───────────────────────────────────────────
 
+export const RECORDING_LINES: Array<[string, string, boolean?]> = [
+  ['23:05', '[Two voices. Raised.]'],
+  ['', 'JULIAN: You\u2019ll sign it, Edmund.', true],
+  ['', 'EDMUND: Get out of my study.'],
+  ['23:08', '[A struggle. Something heavy falls.]'],
+  ['23:09', '[Silence. The tape runs on.]'],
+]
+
 function Recording() {
-  const lines: Array<[string, string, boolean?]> = [
-    ['23:05', '[Two voices. Raised.]'],
-    ['', 'JULIAN: You\u2019ll sign it, Edmund.', true],
-    ['', 'EDMUND: Get out of my study.'],
-    ['23:08', '[A struggle. Something heavy falls.]'],
-    ['23:09', '[Silence. The tape runs on.]'],
-  ]
+  const lines = RECORDING_LINES
   return (
     <div className="flex flex-col items-center gap-4">
       <svg viewBox="0 0 240 140" className="w-56" role="img" aria-label="Cassette tape labelled Study, 11.11.08">

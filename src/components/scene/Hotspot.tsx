@@ -2,6 +2,7 @@
 
 import { Lock } from 'lucide-react'
 import { DisturbedRing } from '@/components/entity/DisturbedHotspot'
+import { audio } from '@/lib/audio/engine'
 import type { SceneObject } from '@/types'
 
 export type HotspotState = 'undiscovered' | 'inspected' | 'locked' | 'disturbed'
@@ -26,6 +27,7 @@ export function Hotspot({ object, state, onClick, lockedMessage }: HotspotProps)
       aria-pressed={state === 'inspected'}
       title={isLocked ? (lockedMessage ?? 'Locked') : name}
       onClick={isLocked ? undefined : onClick}
+      onMouseEnter={() => audio.sfx('hover')}
       className="group absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
       style={{
         left: `${hotspot.x}%`,

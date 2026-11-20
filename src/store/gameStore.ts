@@ -1,12 +1,16 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { GameState, Theory } from '@/types'
-import { migrateState } from './migrations'
+import type { GameState, Theory, AudioSettings } from '@/types'
+import { migrateState, CURRENT_VERSION, DEFAULT_AUDIO } from './migrations'
+import { useFxStore } from './fxStore'
 
 // ── Initial state ──────────────────────────────────────────────────────────
 
 export const INITIAL_STATE: GameState = {
-  version: 1,
+  version: 2,
+  audio: { ...DEFAULT_AUDIO },
+  seenCinematics: [],
+  achievements: [],
   investigator: { name: '', startedAt: 0 },
   discoveredObjects: [],
   inspectedObjects: [],
@@ -33,7 +37,7 @@ export const INITIAL_STATE: GameState = {
   verdict: undefined,
   ui: {
     lastRoute: '',
-    muted: true,
+    muted: false,
     seenIntro: false,
   },
 }
@@ -81,6 +85,9 @@ interface GameStore extends GameState {
   setLastRoute: (route: string) => void
   toggleMute: () => void
   markIntroSeen: () => void
+  setAudio: (patch: Partial<AudioSettings>) => void
+  markCinematicSeen: (id: string) => void
+  unlockAchievement: (id: string) => void
 
   // Meta
   resetStore: () => void
@@ -205,11 +212,12 @@ export const useGameStore = create<GameStore>()(
         }),
 
       fireRule: (ruleId) =>
-        set((s) =>
-          s.entity.firedRules.includes(ruleId)
-            ? {}
-            : { entity: { ...s.entity, firedRules: [...s.entity.firedRules, ruleId] } }
-        ),
+        set((s) => {
+          if (s.entity.firedRules.includes(ruleId)) return {}
+          // Presentation only: the entity shows itself in the room (never changes facts)
+          useFxStore.getState().manifest(ruleId)
+          return { entity: { ...s.entity, firedRules: [...s.entity.firedRules, ruleId] } }
+        }),
 
       disturbEvidence: (id) =>
         set((s) =>
@@ -299,13 +307,30 @@ export const useGameStore = create<GameStore>()(
         set((s) => ({ ui: { ...s.ui, lastRoute: route } })),
 
       toggleMute: () =>
-        set((s) => ({ ui: { ...s.ui, muted: !s.ui.muted } })),
+        set((s) => {
+          const muted = !(s.audio ?? DEFAULT_AUDIO).muted
+          return { ui: { ...s.ui, muted }, audio: { ...(s.audio ?? DEFAULT_AUDIO), muted } }
+        }),
+
+      setAudio: (patch) =>
+        set((s) => ({ audio: { ...(s.audio ?? DEFAULT_AUDIO), ...patch } })),
+
+      markCinematicSeen: (id) =>
+        set((s) => (s.seenCinematics?.includes(id) ? {} : { seenCinematics: [...(s.seenCinematics ?? []), id] })),
+
+      unlockAchievement: (id) =>
+        set((s) => {
+          if (s.achievements?.includes(id)) return {}
+          useFxStore.getState().toast(id)
+          return { achievements: [...(s.achievements ?? []), id] }
+        }),
 
       markIntroSeen: () =>
         set((s) => ({ ui: { ...s.ui, seenIntro: true } })),
 
       // ── Meta ───────────────────────────────────────────────────────────
-      resetStore: () => set({ ...INITIAL_STATE }),
+      // A new investigation keeps the player's audio settings
+      resetStore: () => set((s) => ({ ...INITIAL_STATE, audio: s.audio ?? { ...DEFAULT_AUDIO } })),
     }),
     {
       name: 'haunting-save-v1',
@@ -330,10 +355,13 @@ export const useGameStore = create<GameStore>()(
           return
         }
         if (!state) return
-        const migrated = migrateState(state)
+        const migrated = migrateState(state as unknown as Record<string, unknown>)
         if (!migrated) {
-          // Version mismatch — reset
+          // Unknown version: start fresh
           state.resetStore()
+        } else if (state.version !== CURRENT_VERSION) {
+          // Older save: keep progress, add the new fields
+          setTimeout(() => useGameStore.setState(migrated as Partial<GameStore>), 0)
         }
       },
     }

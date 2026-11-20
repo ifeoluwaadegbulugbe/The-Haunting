@@ -6,12 +6,12 @@ import type { Case001 } from '@/data/case001'
 
 export function selectProgress(state: GameState, caseData: Case001): number {
   const totalGenuineEvidence = caseData.evidence.filter(
-    (e) => e.authenticity === 'genuine'
+    (e) => e.authenticity === 'genuine' && e.relevance !== 'optional'
   ).length // 15 (EV-01..EV-15)
 
   const collectedGenuine = Object.keys(state.collectedEvidence).filter((id) => {
     const ev = caseData.evidence.find((e) => e.id === id)
-    return ev && ev.authenticity === 'genuine'
+    return ev && ev.authenticity === 'genuine' && ev.relevance !== 'optional'
   }).length
 
   const confirmedContradictions = state.contradictionsFlagged.length

@@ -65,6 +65,8 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
 
   // ── Title and name ──────────────────────────────────────────────────────
   await page.goto('/')
+  // The sound gate comes first (browsers need a click before audio can play)
+  await page.getByRole('button', { name: 'Enter the archive' }).click()
   await page.getByRole('button', { name: 'BEGIN INVESTIGATION' }).click()
   await page.getByLabel('Your name').fill('Test Investigator')
   await page.getByRole('button', { name: 'Begin', exact: true }).click()
@@ -175,9 +177,16 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
   await expect(page).toHaveURL(/\/case\/001\/conclusion$/)
   await page.getByRole('button', { name: 'Reveal the Truth' }).click()
   await page.getByRole('button', { name: 'Answer' }).click({ timeout: 30_000 })
+  // The reveal walks back through the night, the witnesses and the entity
+  await page.getByRole('button', { name: 'Continue' }).click({ timeout: 60_000 })
+  await expect(page.getByText('THE WITNESSES, RECONSIDERED')).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click({ timeout: 30_000 })
+  await page.getByRole('button', { name: 'Go down to the cellar' }).click({ timeout: 30_000 })
   const report = page.locator('main', { hasText: 'Case 001 — Closed' })
   await expect(report).toBeVisible({ timeout: 30_000 })
-  await expect(report.getByText('Master of the Archive')).toBeVisible()
+  // The rank line; the achievement chip of the same name is also on the card
+  await expect(report.getByText('Master of the Archive').first()).toBeVisible()
+  await expect(report.getByText('Hidden details found')).toBeVisible()
   await expect(report.getByText('100', { exact: true })).toBeVisible()
 
   // HQ shows the case solved, and a reload keeps it
@@ -197,5 +206,29 @@ test('a corrupt save does not freeze the game', async ({ page }) => {
   await page.goto('/')
   await page.evaluate(() => localStorage.setItem('haunting-save-v1', '{not json'))
   await page.reload()
-  await expect(page.getByRole('button', { name: 'BEGIN INVESTIGATION' })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('button', { name: 'Enter the archive' })).toBeVisible({ timeout: 15_000 })
+})
+
+test('the case assignment plays from the HQ telephone', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Enter the archive' }).click()
+  await page.getByRole('button', { name: 'BEGIN INVESTIGATION' }).click()
+  await page.getByLabel('Your name').fill('Ada')
+  await page.getByRole('button', { name: 'Begin', exact: true }).click()
+  await expect(page.getByText('The telephone is ringing.')).toBeVisible()
+  await page.locator('button[aria-pressed][aria-label="Telephone"]').click()
+  const film = page.getByRole('dialog', { name: 'Case assignment' })
+  await film.getByRole('button', { name: 'Answer' }).click()
+  await expect(film.getByText('Investigator Ada.')).toBeVisible({ timeout: 10_000 })
+  for (let i = 0; i < 4; i++) {
+    await page.waitForTimeout(3600)
+    await page.mouse.click(720, 450)
+  }
+  await film.getByRole('button', { name: 'Break the seal' }).click({ timeout: 10_000 })
+  await expect(film.getByText('YOUR OBJECTIVES')).toBeVisible({ timeout: 10_000 })
+  await film.getByRole('button', { name: 'Enter Ashworth House' }).click({ timeout: 10_000 })
+  await expect(page).toHaveURL(/\/case\/001\/scene$/)
+  // Coming back, the phone has stopped ringing
+  await page.goto('/hq')
+  await expect(page.getByText('The case file is on your desk.')).toBeVisible()
 })

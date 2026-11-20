@@ -12,6 +12,8 @@ import { useGameStore } from '@/store/gameStore'
 import { selectUnlockedSections, selectProgress, selectRank } from '@/store/selectors'
 import { evaluateCondition } from '@/lib/engine/conditions'
 import { evaluateEntityRules, dispatchEntityActions } from '@/lib/entity'
+import { audio } from '@/lib/audio/engine'
+import { useFxStore } from '@/store/fxStore'
 import { CASE_001 } from '@/data/case001'
 import type { DigitalRecord } from '@/types'
 
@@ -86,11 +88,14 @@ export default function ArchivePage() {
   }
 
   const handleRecover = (record: DigitalRecord) => {
+    if (record.deleted) audio.sfx('static', 0.8)
     recoverRecord(record.id)
     if (record.yieldsEvidence && !useGameStore.getState().collectedEvidence[record.yieldsEvidence]) {
       collectEvidence(record.yieldsEvidence)
       const ev = CASE_001.evidence.find((e) => e.id === record.yieldsEvidence)
       if (ev) addAttention(ev.relevance === 'core' ? 6 : 3)
+      setTimeout(() => audio.sfx(ev?.relevance === 'core' ? 'sting' : 'chime', 0.8), record.deleted ? 450 : 0)
+      useFxStore.getState().fly(record.yieldsEvidence, { x: window.innerWidth / 2, y: window.innerHeight / 2 })
       const s = useGameStore.getState()
       dispatchEntityActions(
         evaluateEntityRules(s, { type: 'evidenceCollected', ref: record.yieldsEvidence }, CASE_001),

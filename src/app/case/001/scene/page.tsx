@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Hotspot } from '@/components/scene/Hotspot'
@@ -9,6 +8,8 @@ import { ObjectPanel } from '@/components/scene/ObjectPanel'
 import { EvidenceTray } from '@/components/scene/EvidenceTray'
 import { EntityOverlay } from '@/components/entity/EntityOverlay'
 import { ItemCloseUp } from '@/components/scene/ItemCloseUp'
+import { RoomStage } from '@/components/room/RoomStage'
+import { useFxStore } from '@/store/fxStore'
 import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { evaluateCondition, conditionMessage } from '@/lib/engine/conditions'
@@ -136,7 +137,14 @@ export default function ScenePage() {
     zoomThen(obj, () => setCloseUp({ object: obj, newlyFound: false }))
   }
 
+  // Leaving a close-up: newly found evidence flies into the inventory as the camera pulls back
   const closeCloseUp = () => {
+    if (closeUp?.newlyFound) {
+      const from = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+      closeUp.object.yieldsEvidence.forEach((id, i) =>
+        setTimeout(() => useFxStore.getState().fly(id, from), i * 180)
+      )
+    }
     setCloseUp(null)
     setZoomObject(null)
   }
@@ -193,55 +201,32 @@ export default function ScenePage() {
 
   return (
     <div className="relative w-full h-dvh overflow-hidden bg-obsidian">
-      {/* Scene stage: image and hotspots share one surface with the picture's
-          proportions, so rings stay on their objects at any screen size.
-          Narrow screens pan sideways across the study. */}
-      <div
-        ref={sceneRef}
-        className="absolute inset-0 overflow-x-auto overflow-y-hidden"
-        style={{ zIndex: 1, scrollbarWidth: 'none' }}
+      {/* The study: picture, rings, zoom, depth, candle glow, dust */}
+      <RoomStage
+        src="/assets/scene/study-scene.jpg"
+        alt="Ashworth House study"
+        ratio={SCENE_RATIO}
+        zoom={zoomObject ? zoomObject.hotspot : null}
+        zoomScale={ZOOM_SCALE}
+        zoomMs={ZOOM_MS}
+        scrollRef={sceneRef}
+        glows={[{ x: 40, y: 53, size: 8 }, { x: 84, y: 24, size: 6 }]}
       >
         <div
-          className="absolute left-0 top-1/2 -translate-y-1/2"
-          style={{
-            width: `max(100%, calc(100dvh * ${SCENE_RATIO}))`,
-            height: `max(100%, calc(100vw / ${SCENE_RATIO}))`,
-            transform: zoomObject ? `scale(${ZOOM_SCALE})` : 'scale(1)',
-            transformOrigin: zoomObject ? `% ${zoomObject.hotspot.y}%` : undefined,
-            transition: prefersReducedMotion()
-              ? 'none'
-              : `transform ${ZOOM_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)`,
-          }}
+          className="absolute inset-0 transition-opacity duration-300"
+          style={{ opacity: zoomObject ? 0 : 1, pointerEvents: zoomObject ? 'none' : undefined }}
         >
-          <Image
-            src="/assets/scene/study-scene.jpg"
-            alt="Ashworth House study"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: 'linear-gradient(to top, rgba(14,12,16,0.5) 0%, rgba(14,12,16,0.1) 60%)' }}
-          />
-          <div
-            className="absolute inset-0 transition-opacity duration-300"
-            style={{ opacity: zoomObject ? 0 : 1, pointerEvents: zoomObject ? 'none' : undefined }}
-          >
-            {CASE_001.scene.map((obj) => (
-              <Hotspot
-                key={obj.id}
-                object={obj}
-                state={getHotspotState(obj)}
-                onClick={() => handleHotspotClick(obj)}
-                lockedMessage={conditionMessage(obj.id)}
-              />
-            ))}
-          </div>
+          {CASE_001.scene.map((obj) => (
+            <Hotspot
+              key={obj.id}
+              object={obj}
+              state={getHotspotState(obj)}
+              onClick={() => handleHotspotClick(obj)}
+              lockedMessage={conditionMessage(obj.id)}
+            />
+          ))}
         </div>
-      </div>
+      </RoomStage>
 
       {/* Top bar */}
       <div

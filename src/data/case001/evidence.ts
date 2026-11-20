@@ -256,6 +256,69 @@ export const EVIDENCE_ITEMS: Evidence[] = [
     refutedBy: ['EV-08'],
     assetPath: '/assets/evidence/photo-window-disturbed.jpg',
   },
+
+  // ── Optional hidden clues ────────────────────────────────────────────────
+  // Found by examining items closely. They reward thoroughness (rating and
+  // achievements) but are never needed to progress and never change the score.
+  {
+    id: 'OC-01',
+    name: 'Signet Ring',
+    description:
+      'Under magnification, the torn edge of the family photograph still shows a man\u2019s cuff ' +
+      'and a gold signet ring engraved "J.A.".',
+    kind: 'photo',
+    source: 'EV-02',
+    location: 'Torn edge of the family photograph',
+    reliability: 'high',
+    authenticity: 'genuine',
+    relevance: 'optional',
+    relatedCharacters: ['julian'],
+    relatedEvents: ['TL-02'],
+  },
+  {
+    id: 'OC-02',
+    name: 'Scratched Clock Case',
+    description:
+      'Inside the back door of the mantel clock, someone has scratched into the brass: ' +
+      '"11:13 \u2014 she is still calling."',
+    kind: 'physical',
+    source: 'EV-08',
+    location: 'Inside the mantel clock',
+    reliability: 'medium',
+    authenticity: 'genuine',
+    relevance: 'optional',
+    relatedCharacters: ['clara'],
+    relatedEvents: ['TL-06'],
+  },
+  {
+    id: 'OC-03',
+    name: 'Detective\u2019s Note',
+    description:
+      'Pencilled on the back of the third clipping, in the hand of the original officer: ' +
+      '"Cousin not abroad? Ask the neighbour about the car. \u2014 D.I. Hart"',
+    kind: 'document',
+    source: 'EV-04',
+    location: 'Back of a newspaper clipping',
+    reliability: 'medium',
+    authenticity: 'genuine',
+    relevance: 'optional',
+    relatedCharacters: ['julian', 'margaret'],
+    relatedEvents: ['TL-02'],
+  },
+  {
+    id: 'OC-04',
+    name: 'Lily\u2019s Secret',
+    description:
+      'Written in crayon on the back of Lily\u2019s drawing: "Mummy says the cellar phone is our secret."',
+    kind: 'document',
+    source: 'EV-09',
+    location: 'Back of Lily\u2019s drawing',
+    reliability: 'medium',
+    authenticity: 'genuine',
+    relevance: 'optional',
+    relatedCharacters: ['lily', 'clara'],
+    relatedEvents: ['TL-06'],
+  },
 ]
 
 // Validate at import time

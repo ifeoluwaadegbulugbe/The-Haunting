@@ -76,6 +76,50 @@ body {
   }
 }
 
+/* ── Entity glitch: brief colour split and jitter on the whole page ─────── */
+@media (prefers-reduced-motion: no-preference) {
+  .haunt-glitch body {
+    filter: url(#haunt-rgb);
+    animation: haunt-jitter 0.65s steps(2, end);
+  }
+  @keyframes haunt-jitter {
+    0%   { transform: translate(0, 0) skewX(0deg); }
+    20%  { transform: translate(-4px, 1px) skewX(-1deg); }
+    40%  { transform: translate(5px, -2px) skewX(1.5deg); }
+    60%  { transform: translate(-2px, 2px) skewX(0deg); }
+    80%  { transform: translate(3px, 0) skewX(-0.5deg); }
+    100% { transform: translate(0, 0) skewX(0deg); }
+  }
+
+  /* drifting fog layers */
+  @keyframes fog-drift {
+    0%   { transform: translateX(-8%); }
+    100% { transform: translateX(8%); }
+  }
+  .fog-layer { animation: fog-drift 38s ease-in-out infinite alternate; }
+
+  /* candle and lamp glow */
+  @keyframes glow-flicker {
+    0%, 100% { opacity: 0.85; transform: scale(1); }
+    17%      { opacity: 0.7;  transform: scale(0.97); }
+    33%      { opacity: 0.95; transform: scale(1.03); }
+    50%      { opacity: 0.78; transform: scale(0.99); }
+    70%      { opacity: 1;    transform: scale(1.02); }
+  }
+  .glow-flicker { animation: glow-flicker 3.2s ease-in-out infinite; }
+
+  /* slow camera push-in on room entry */
+  @keyframes room-push {
+    from { transform: scale(1.06); }
+    to   { transform: scale(1); }
+  }
+  .room-push { animation: room-push 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+
+  /* typing caret */
+  @keyframes caret { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+  .caret::after { content: '▍'; margin-left: 1px; animation: caret 0.9s step-end infinite; }
+}
+
 /* Entity-disturbed evidence card (entity colour kept in CSS, not components) */
 [data-disturbed='true'] {
   border: 1.5px solid var(--entity-glow);

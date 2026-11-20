@@ -250,3 +250,16 @@ The entity may **never**:
 - Make the mystery unsolvable
 
 EV-X1 is always disprovable through CX-07.
+
+---
+
+## 9.11 Optional hidden clues (added with developer approval)
+
+Extra clues hidden inside item close-ups. Relevance `optional`: they reward thoroughness (a rating out of 4 and achievements) but are **never** required for progress, are excluded from the progress percentage and do not change the 100-point score. None of them contradicts §9.1.
+
+| ID | Name | Found by | Relates to |
+|---|---|---|---|
+| `OC-01` | Signet Ring | Magnifying the torn edge of EV-02 | Julian, TL-02 |
+| `OC-02` | Scratched Clock Case | Opening the back of the mantel clock (EV-08) | Clara, TL-06 |
+| `OC-03` | Detective's Note | Turning over the third clipping (EV-04) | Julian, Margaret, TL-02 |
+| `OC-04` | Lily's Secret | Turning over Lily's drawing (EV-09) | Lily, Clara, TL-06 |

@@ -14,6 +14,7 @@ import { selectUnlockedSections, selectProgress, selectRank } from '@/store/sele
 import { scoreTheory } from '@/lib/scoring'
 import { evaluateEntityRules, dispatchEntityActions } from '@/lib/entity'
 import { CASE_001 } from '@/data/case001'
+import { thoroughness } from '@/data/achievements'
 
 type Phase = 'submission' | 'reveal' | 'report'
 
@@ -127,7 +128,7 @@ export default function ConclusionPage() {
   }
 
   if (phase === 'reveal') {
-    return <RevealSequence theorySummary={theory.summary} onComplete={() => setPhase('report')} />
+    return <RevealSequence theorySummary={theory.summary} timelinePlacement={theory.timelinePlacement} onComplete={() => setPhase('report')} />
   }
 
   if (phase === 'report' && result) {
@@ -138,6 +139,8 @@ export default function ConclusionPage() {
           <ReportCard
             result={result}
             narration={narration}
+            thoroughness={thoroughness(state)}
+            achievements={state.achievements ?? []}
             onReplay={() => { router.push('/'); resetStore() }}
             onHQ={() => router.push('/hq')}
           />

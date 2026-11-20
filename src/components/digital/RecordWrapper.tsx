@@ -1,5 +1,6 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import { Stamp, Button } from '@/components/ui'
 import { RecordContent } from './RecordRenderers'
 import type { DigitalRecord } from '@/types'
@@ -54,7 +55,12 @@ export function RecordWrapper({
   const canLog = !isDeleted && Boolean(record.yieldsEvidence)
 
   return (
-    <div className="mb-4">
+    <motion.div
+      className="mb-4"
+      initial={isRecovered && isDeleted ? { opacity: 0, x: -6, filter: 'blur(3px) hue-rotate(60deg)' } : false}
+      animate={{ opacity: [0, 1, 0.4, 1], x: [-6, 4, -2, 0], filter: 'blur(0px) hue-rotate(0deg)' }}
+      transition={{ duration: 0.6 }}
+    >
       {canLog && !isCollected && (
         <div className="flex justify-end mb-1">
           <Button variant="secondary" onClick={onRecover} className="text-xs py-1 px-3">
@@ -73,6 +79,6 @@ export function RecordWrapper({
         </div>
       )}
       <RecordContent record={record} />
-    </div>
+    </motion.div>
   )
 }

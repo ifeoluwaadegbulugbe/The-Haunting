@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Stamp } from '@/components/ui'
 import { TopBar } from '@/components/archive/TopBar'
 import { EvidenceCard } from '@/components/board/EvidenceCard'
 import { ThreadLayer } from '@/components/board/ThreadLayer'
@@ -12,10 +14,11 @@ import { EntityOverlay } from '@/components/entity/EntityOverlay'
 import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { selectUnlockedSections, selectProgress, selectRank } from '@/store/selectors'
-import { evaluateLink } from '@/lib/evidence/links'
+import { explainLink } from '@/lib/evidence/explain'
 import { getAvailableContradictions } from '@/lib/evidence/contradictions'
 import { validateTimelinePlacement } from '@/lib/evidence/timeline'
 import { evaluateEntityRules, dispatchEntityActions } from '@/lib/entity'
+import { audio } from '@/lib/audio/engine'
 import { CASE_001 } from '@/data/case001'
 import type { Theory } from '@/types'
 
@@ -50,9 +53,17 @@ export default function EvidenceBoardPage() {
   const [overlayText, setOverlayText] = useState<string | null>(null)
   const [pendingFrom, setPendingFrom] = useState<string | null>(null)
   const [pendingTo, setPendingTo] = useState<{ x: number; y: number } | null>(null)
-  const [notConclusive, setNotConclusive] = useState<string | null>(null)
+  const [linkNote, setLinkNote] = useState<{ verdict: 'valid' | 'invalid' | 'contradiction'; text: string } | null>(null)
+  const notConclusive = linkNote?.verdict === 'invalid' ? `Not conclusive. ${linkNote.text}` : null
+
+  // Link explanations stay up long enough to read
+  useEffect(() => {
+    if (!linkNote) return
+    const t = setTimeout(() => setLinkNote(null), 6500)
+    return () => clearTimeout(t)
+  }, [linkNote])
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null)
-  const [connectFrom, setConnectFrom]     = useState<string | null>(null)
+  const [connectFrom, setConnectFrom] = useState<string | null>(null)
 
   useEffect(() => { setLastRoute('/case/001/evidence') }, [setLastRoute])
 
@@ -111,16 +122,19 @@ export default function EvidenceBoardPage() {
       (l) => (l.a === a && l.b === b) || (l.a === b && l.b === a)
     )
     if (alreadyLinked) return
-    const verdict = evaluateLink(a, b, CASE_001)
+    const { verdict, text } = explainLink(a, b, CASE_001)
     addLink(a, b, verdict)
     if (verdict === 'valid') {
+      audio.sfx('pin'); setTimeout(() => audio.sfx('chime', 0.7), 700)
       addAttention(5)
       fireEvents([{ type: 'linksReached', count: links.filter((l) => l.verdict === 'valid').length + 1 }])
-    } else if (verdict === 'invalid') {
-      const name = (id: string) => CASE_001.evidence.find((e) => e.id === id)?.name ?? id
-      setNotConclusive(` and ${name(b)}: not conclusive`)
-      setTimeout(() => setNotConclusive(null), 3000)
+    } else if (verdict === 'contradiction') {
+      audio.sfx('pin'); setTimeout(() => audio.sfx('sting', 0.8), 600)
+    } else {
+      audio.sfx('deny', 0.7)
     }
+    // Every link explains itself: why it holds, or why it doesn't
+    setLinkNote({ verdict, text })
   }
 
   // ── Thread drag handlers ─────────────────────────────────────────────────
@@ -180,6 +194,12 @@ export default function EvidenceBoardPage() {
     if (!selectedEvent) return
     placeTimelineEvent(String(slotIndex), selectedEvent)
     setSelectedEvent(null)
+    audio.sfx('pin')
+    // A full sequence with no structural conflict gets a stamp (correctness stays hidden until the end)
+    const next = { ...useGameStore.getState().timelinePlacement }
+    if (Object.keys(next).length === CASE_001.timeline.length && validateTimelinePlacement(next, CASE_001).length === 0) {
+      setTimeout(() => audio.sfx('stamp'), 300)
+    }
   }
 
   const handleTimelineClear = (slotIndex: number) => {
@@ -228,121 +248,136 @@ export default function EvidenceBoardPage() {
       {/* ── Connections tab ─────────────────────────────────────────────── */}
       {tab === 'connections' && (
         <>
-        <div className="hidden md:flex gap-0">
-          <div
-            ref={boardRef}
-            className="relative flex-1 overflow-auto"
-            style={{
-              minHeight: 'calc(100dvh - 112px)',
-              backgroundImage: 'url(/assets/ui/board-wall.jpg)',
-              backgroundSize: 'cover',
-              backgroundColor: 'var(--brown)',
-            }}
-          >
-            <ThreadLayer
-              links={links}
-              positions={allPositions}
-              pendingFrom={pendingFrom ? { id: pendingFrom, ...allPositions[pendingFrom] } : undefined}
-              pendingTo={pendingTo ?? undefined}
-            />
-
-            {/* 11:13 anchor card */}
+          <div className="hidden md:flex gap-0">
             <div
-              className="absolute flex items-center justify-center rounded-sm"
+              ref={boardRef}
+              className="relative flex-1 overflow-auto"
               style={{
-                left: ANCHOR_POS.x, top: ANCHOR_POS.y,
-                width: 120, height: 80,
-                background: 'var(--ink)',
-                border: '2px solid var(--gold)',
-                zIndex: 5,
+                minHeight: 'calc(100dvh - 112px)',
+                backgroundImage: 'url(/assets/ui/board-wall.jpg)',
+                backgroundSize: 'cover',
+                backgroundColor: 'var(--brown)',
               }}
             >
-              <span className="font-cinzel text-gold text-xl tracking-widest">11:13</span>
+              <ThreadLayer
+                links={links}
+                positions={allPositions}
+                pendingFrom={pendingFrom ? { id: pendingFrom, ...allPositions[pendingFrom] } : undefined}
+                pendingTo={pendingTo ?? undefined}
+              />
+
+              {/* 11:13 anchor card */}
+              <div
+                className="absolute flex items-center justify-center rounded-sm"
+                style={{
+                  left: ANCHOR_POS.x, top: ANCHOR_POS.y,
+                  width: 120, height: 80,
+                  background: 'var(--ink)',
+                  border: '2px solid var(--gold)',
+                  zIndex: 5,
+                }}
+              >
+                <span className="font-cinzel text-gold text-xl tracking-widest">11:13</span>
+              </div>
+
+              {collectedItems.map((ev, i) => (
+                <EvidenceCard
+                  key={ev.id}
+                  evidence={ev}
+                  position={boardPositions[ev.id] ?? defaultPosition(i)}
+                  onMove={setCardPosition}
+                  onPinDrag={handlePinDrag}
+                  disturbed={entity.disturbed.includes(ev.id)}
+                />
+              ))}
+
+              <AnimatePresence>
+                {linkNote && (
+                  <motion.div
+                    key={linkNote.text}
+                    role="status"
+                    initial={{ opacity: 0, y: 16, rotate: -1 }}
+                    animate={{ opacity: 1, y: 0, rotate: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="fixed bottom-6 left-1/2 -translate-x-1/2 max-w-lg px-5 py-3 rounded-sm pointer-events-none"
+                    style={{
+                      zIndex: 20,
+                      background: 'linear-gradient(160deg, var(--parchment-light), var(--parchment))',
+                      boxShadow: '0 12px 30px rgba(14,12,16,0.6)',
+                      borderLeft: `4px solid ${linkNote.verdict === 'valid' ? 'var(--verdigris)' : linkNote.verdict === 'contradiction' ? 'var(--thread)' : 'var(--brown)'}`,
+                    }}
+                  >
+                    <p className="font-cinzel text-[10px] tracking-[0.25em] text-brown">
+                      {linkNote.verdict === 'valid' ? 'CONNECTION HOLDS' : linkNote.verdict === 'contradiction' ? 'THESE CANNOT BOTH BE TRUE' : 'NOT CONCLUSIVE'}
+                    </p>
+                    <p className="font-cormorant text-obsidian text-base leading-snug">{linkNote.text}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {collectedItems.map((ev, i) => (
-              <EvidenceCard
-                key={ev.id}
-                evidence={ev}
-                position={boardPositions[ev.id] ?? defaultPosition(i)}
-                onMove={setCardPosition}
-                onPinDrag={handlePinDrag}
-                disturbed={entity.disturbed.includes(ev.id)}
-              />
-            ))}
-
-            {notConclusive && (
-              <div
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 font-caveat text-sm px-4 py-2 rounded"
-                style={{ background: 'var(--ink)', color: 'var(--parchment-dark)', border: '1px solid var(--brown)', zIndex: 10 }}
-              >
-                {notConclusive}
+            {/* Contradictions sidebar */}
+            {availableContradictions.length > 0 && (
+              <div className="w-60 lg:w-72 flex-shrink-0 overflow-y-auto p-3 space-y-3 border-l border-gold bg-ink" style={{ maxHeight: 'calc(100dvh - 112px)' }}>
+                <h3 className="font-cormorant font-semibold text-parchment text-base">Contradictions</h3>
+                {availableContradictions.map((cx) => (
+                  <ContradictionBadge
+                    key={cx.id}
+                    contradiction={cx}
+                    isConfirmed={contradictionsFlagged.includes(cx.id)}
+                    onConfirm={handleConfirmContradiction}
+                  />
+                ))}
               </div>
             )}
           </div>
 
-          {/* Contradictions sidebar */}
-          {availableContradictions.length > 0 && (
-            <div className="w-60 lg:w-72 flex-shrink-0 overflow-y-auto p-3 space-y-3 border-l border-gold bg-ink" style={{ maxHeight: 'calc(100dvh - 112px)' }}>
-              <h3 className="font-cormorant font-semibold text-parchment text-base">Contradictions</h3>
-              {availableContradictions.map((cx) => (
-                <ContradictionBadge
-                  key={cx.id}
-                  contradiction={cx}
-                  isConfirmed={contradictionsFlagged.includes(cx.id)}
-                  onConfirm={handleConfirmContradiction}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Phone: list view with a two-tap Connect action */}
-        <div className="md:hidden p-4 space-y-3">
-          <p className="font-caveat text-parchment-dark text-sm">
-            {connectFrom
-              ? 'Now choose the second item to connect.'
-              : 'Tap Connect on one item, then on another.'}
-          </p>
-          {collectedItems.map((ev) => {
-            const linked = links.filter((l) => l.a === ev.id || l.b === ev.id)
-            return (
-              <div
-                key={ev.id}
-                className="flex items-center justify-between gap-3 p-3 rounded border"
-                style={{
-                  background: 'var(--ink)',
-                  borderColor: connectFrom === ev.id ? 'var(--gold)' : 'var(--brown)',
-                }}
-              >
-                <div className="min-w-0">
-                  <p className="font-inter text-sm text-parchment truncate">{ev.name}</p>
-                  <p className="font-inter text-xs text-parchment-dark">
-                    {linked.filter((l) => l.verdict !== 'invalid').length} connection(s)
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleListConnect(ev.id)}
-                  className="font-inter text-xs px-3 rounded border cursor-pointer flex-shrink-0"
-                  style={{ minHeight: '44px', background: 'none', borderColor: 'var(--gold)', color: 'var(--parchment)' }}
+          {/* Phone: list view with a two-tap Connect action */}
+          <div className="md:hidden p-4 space-y-3">
+            <p className="font-caveat text-parchment-dark text-sm">
+              {connectFrom
+                ? 'Now choose the second item to connect.'
+                : 'Tap Connect on one item, then on another.'}
+            </p>
+            {collectedItems.map((ev) => {
+              const linked = links.filter((l) => l.a === ev.id || l.b === ev.id)
+              return (
+                <div
+                  key={ev.id}
+                  className="flex items-center justify-between gap-3 p-3 rounded border"
+                  style={{
+                    background: 'var(--ink)',
+                    borderColor: connectFrom === ev.id ? 'var(--gold)' : 'var(--brown)',
+                  }}
                 >
-                  {connectFrom === ev.id ? 'Cancel' : 'Connect'}
-                </button>
-              </div>
-            )
-          })}
-          {notConclusive && (
-            <p className="font-caveat text-sm text-parchment-dark">{notConclusive}</p>
-          )}
-          {availableContradictions.map((cx) => (
-            <ContradictionBadge
-              key={cx.id}
-              contradiction={cx}
-              isConfirmed={contradictionsFlagged.includes(cx.id)}
-              onConfirm={handleConfirmContradiction}
-            />
-          ))}
-        </div>
+                  <div className="min-w-0">
+                    <p className="font-inter text-sm text-parchment truncate">{ev.name}</p>
+                    <p className="font-inter text-xs text-parchment-dark">
+                      {linked.filter((l) => l.verdict !== 'invalid').length} connection(s)
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleListConnect(ev.id)}
+                    className="font-inter text-xs px-3 rounded border cursor-pointer flex-shrink-0"
+                    style={{ minHeight: '44px', background: 'none', borderColor: 'var(--gold)', color: 'var(--parchment)' }}
+                  >
+                    {connectFrom === ev.id ? 'Cancel' : 'Connect'}
+                  </button>
+                </div>
+              )
+            })}
+            {notConclusive && (
+              <p className="font-caveat text-sm text-parchment-dark">{notConclusive}</p>
+            )}
+            {availableContradictions.map((cx) => (
+              <ContradictionBadge
+                key={cx.id}
+                contradiction={cx}
+                isConfirmed={contradictionsFlagged.includes(cx.id)}
+                onConfirm={handleConfirmContradiction}
+              />
+            ))}
+          </div>
         </>
       )}
 
@@ -352,6 +387,19 @@ export default function EvidenceBoardPage() {
           <p className="font-caveat text-parchment-dark text-sm">
             Select an event, then click a slot to place it. Events can be repositioned.
           </p>
+          <AnimatePresence>
+            {Object.keys(timelinePlacement).length === CASE_001.timeline.length && timelineConflicts.length === 0 && (
+              <motion.div
+                className="flex justify-center"
+                initial={{ scale: 2.4, rotate: -16, opacity: 0 }}
+                animate={{ scale: 1.2, rotate: -6, opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 18 }}
+              >
+                <Stamp label="SEQUENCE HOLDS" variant="solved" />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Event cards */}
           <div className="flex flex-wrap gap-2">

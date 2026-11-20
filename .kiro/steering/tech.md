@@ -33,7 +33,7 @@ vitest  @testing-library/react  jsdom
 @playwright/test   (P1)
 ```
 
-The AI provider is called with plain `fetch` from server routes — no SDK. Dragging uses native pointer events. Sound uses the native `Audio` object.
+The AI provider is called with plain `fetch` from server routes — no SDK. Dragging uses native pointer events. Sound uses the Web Audio API through `src/lib/audio/engine.ts` (music, ambient and sfx buses; each sound plays its file if present and falls back to synthesis). No audio library.
 
 ## Environment variables
 

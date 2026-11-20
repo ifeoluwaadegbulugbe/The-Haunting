@@ -1,8 +1,9 @@
+import type { ReactNode } from 'react'
 import { clsx } from 'clsx'
 
 export interface ChatBubbleProps {
   role: 'player' | 'witness'
-  text: string
+  text: ReactNode
   mood?: string
 }
 

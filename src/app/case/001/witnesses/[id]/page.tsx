@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Send, Package } from 'lucide-react'
-import { Button } from '@/components/ui'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowLeft, Send, Package, ScrollText, X } from 'lucide-react'
+import { Button, Stamp } from '@/components/ui'
 import { TopBar } from '@/components/archive/TopBar'
-import { WitnessPortrait } from '@/components/witness/WitnessPortrait'
+import { WitnessPortrait, type WitnessMood } from '@/components/witness/WitnessPortrait'
 import { ChatBubble } from '@/components/witness/ChatBubble'
 import { TypingDots } from '@/components/witness/TypingDots'
 import { EvidencePicker } from '@/components/witness/EvidencePicker'
@@ -16,7 +17,10 @@ import { useGameStore } from '@/store/gameStore'
 import { selectUnlockedSections, selectProgress, selectRank } from '@/store/selectors'
 import { evaluateEntityRules, dispatchEntityActions } from '@/lib/entity'
 import { playSound } from '@/lib/audio'
+import { audio } from '@/lib/audio/engine'
+import { useAsset } from '@/lib/useAsset'
 import { CASE_001 } from '@/data/case001'
+import { SUGGESTED_QUESTIONS } from '@/data/case001/questions'
 import type { Evidence } from '@/types'
 
 const WITNESS_IDS = ['margaret', 'dorothea', 'julian'] as const
@@ -48,7 +52,16 @@ export default function WitnessPage() {
   const [showPicker, setShowPicker] = useState(false)
   const [overlayText, setOverlayText] = useState<string | null>(null)
   const [flickering, setFlickering] = useState(false)
+  const [mood, setMood] = useState<WitnessMood>('calm')
+  const [cornered, setCornered] = useState(false)
+  const [lieBroken, setLieBroken] = useState(false)
+  const [typingAt, setTypingAt] = useState<number | null>(null)
+  const [showStatements, setShowStatements] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const roomArt = useAsset('/assets/ui/interview-room.jpg')
+
+  // A new witness starts composed
+  useEffect(() => { setMood('calm'); setCornered(false); setLieBroken(false) }, [witnessId])
 
   useEffect(() => {
     setLastRoute(`/case/001/witnesses/${witnessId}`)
@@ -64,6 +77,10 @@ export default function WitnessPage() {
 
   const turns = witnessChats[witnessId] ?? []
   const trust = witnessTrust[witnessId] ?? 50
+  const pressured = cornered || trust < 25
+  const asked = new Set(turns.filter((t) => t.role === 'player').map((t) => t.text))
+  const suggestions = (SUGGESTED_QUESTIONS[witnessId] ?? []).filter((q) => !asked.has(q)).slice(0, 3)
+  const statements = witness.facts.filter((f) => revealedFacts.includes(f.id))
 
   const dispatchStore = {
     addEntityMessage, disturbEvidence, plantEvidence,
@@ -131,7 +148,23 @@ export default function WitnessPage() {
         throw new Error('bad witness response')
       }
 
-      addChatTurn(witnessId, { role: 'witness', text: data.reply as string, at: Date.now() })
+      // People hesitate, longer when shown something they hoped you wouldn't find
+      await new Promise((r) => setTimeout(r, evidenceId ? 1300 : 600))
+
+      const at = Date.now()
+      setTypingAt(at)
+      addChatTurn(witnessId, { role: 'witness', text: data.reply as string, at })
+      if (data.mood === 'calm' || data.mood === 'afraid' || data.mood === 'defensive' || data.mood === 'cold') setMood(data.mood)
+
+      // Evidence that forces a new admission breaks the witness's story
+      if (evidenceId && data.newlyRevealed && data.newlyRevealed.length > 0) {
+        audio.sfx('sting', 0.9)
+        setTimeout(() => audio.sfx('stamp', 0.9), 450)
+        setLieBroken(true)
+        setCornered(true)
+        setMood((m) => (m === 'calm' ? 'afraid' : m))
+        setTimeout(() => setLieBroken(false), 2600)
+      }
 
       if (data.trustDelta && firstTimePresented) {
         setTrust(witnessId, trust + data.trustDelta)
@@ -182,11 +215,22 @@ export default function WitnessPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-obsidian" style={{ paddingTop: '56px' }}>
+    <div className="relative min-h-dvh bg-obsidian overflow-hidden" style={{ paddingTop: '56px' }}>
       <TopBar investigatorName={investigator.name} rankTitle={rankTitle} rankNumber={rank} unlockedSections={unlocked} />
 
-      <main className="max-w-5xl mx-auto px-4 py-6 flex flex-col gap-4">
-        {/* Back + witness switcher */}
+      {/* The interview room */}
+      <div aria-hidden="true" className="fixed inset-0 room-push" style={{ zIndex: 0 }}>
+        {roomArt ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/assets/ui/interview-room.jpg" alt="" className="w-full h-full object-cover" style={{ filter: pressured ? 'brightness(0.55)' : 'brightness(0.7)', transition: 'filter 1s' }} />
+        ) : (
+          <div className="w-full h-full" style={{ background: 'radial-gradient(ellipse at 30% 35%, rgba(81,65,61,0.55), transparent 55%), linear-gradient(180deg, rgba(23,20,25,1) 0%, rgba(14,12,16,1) 100%)' }} />
+        )}
+        <div className="absolute glow-flicker rounded-full" style={{ left: '28%', top: '18%', width: '38vw', aspectRatio: '1', transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle, rgba(232,177,93,0.22), transparent 60%)', mixBlendMode: 'screen' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(14,12,16,0.85) 100%)' }} />
+      </div>
+
+      <main className="relative max-w-5xl mx-auto px-4 py-6 flex flex-col gap-4" style={{ zIndex: 1 }}>
         <div className="flex items-center justify-between">
           <Link href="/hq" className="inline-flex items-center gap-2 font-inter text-xs text-parchment-dark hover:text-parchment">
             <ArrowLeft size={14} /> Back to HQ
@@ -199,16 +243,12 @@ export default function WitnessPage() {
                 <button
                   key={id}
                   onClick={() => router.push(`/case/001/witnesses/${id}`)}
-                  className="relative w-12 h-12 rounded-full overflow-hidden border-2 transition-colors cursor-pointer"
-                  style={{
-                    borderColor: id === witnessId ? 'var(--gold)' : 'var(--brown)',
-                    background: 'none', padding: 0,
-                  }}
+                  className="relative w-12 h-12 rounded-full overflow-hidden border-2 transition-transform hover:scale-110 cursor-pointer"
+                  style={{ borderColor: id === witnessId ? 'var(--gold)' : 'var(--brown)', background: 'none', padding: 0 }}
                   title={w.name}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={w.portrait} alt={w.name} className="w-full h-full object-cover object-top" />
-                  {/* trust dot */}
                   <span
                     className="absolute bottom-0.5 right-0.5 w-2 h-2 rounded-full border border-obsidian"
                     style={{ background: t >= 67 ? 'var(--verdigris)' : t >= 34 ? 'var(--gold)' : 'var(--thread)' }}
@@ -219,47 +259,69 @@ export default function WitnessPage() {
           </div>
         </div>
 
-        {/* Main layout */}
         <div className="flex flex-col md:flex-row gap-6 items-stretch md:items-start">
-          {/* Portrait */}
-          <WitnessPortrait witness={witness} trust={trust} flickering={flickering} />
+          <motion.div key={witnessId} initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
+            <WitnessPortrait witness={witness} trust={trust} mood={mood} pressured={pressured} flickering={flickering} />
+          </motion.div>
 
-          {/* Chat panel */}
-          <div
-            className="flex-1 flex flex-col rounded-sm overflow-hidden border border-gold"
-            style={{ background: 'var(--ink)', minHeight: '500px' }}
-          >
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-gold flex items-center gap-3" style={{ background: 'var(--burgundy)' }}>
+          <div className="relative flex-1 flex flex-col rounded-sm overflow-hidden border border-gold" style={{ background: 'rgba(14,12,16,0.88)', minHeight: '520px' }}>
+            <div className="px-4 py-3 border-b border-gold flex items-center gap-3" style={{ background: 'rgba(66,29,41,0.92)' }}>
+              <span className="w-2 h-2 rounded-full" style={{ background: 'var(--thread)', boxShadow: '0 0 8px var(--thread)' }} aria-hidden="true" />
+              <span className="font-inter text-[10px] tracking-[0.2em] text-parchment-dark">RECORDING</span>
               <span className="font-cormorant font-semibold text-parchment text-sm">{witness.name}</span>
-              <span className="font-inter text-xs text-parchment-dark">{witness.role}</span>
+              <button
+                onClick={() => { audio.sfx('page'); setShowStatements((v) => !v) }}
+                className="ml-auto inline-flex items-center gap-1.5 font-inter text-xs text-parchment-dark hover:text-parchment"
+                aria-expanded={showStatements}
+              >
+                <ScrollText size={14} /> Statements ({statements.length})
+              </button>
             </div>
 
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {turns.length === 0 && (
-                <p className="font-caveat text-parchment-dark text-sm italic text-center pt-8">
-                  Begin the interrogation…
+                <p className="font-caveat text-parchment-dark text-lg text-center pt-8">
+                  {witness.fallbackLines.greeting[0]}
                 </p>
               )}
               {turns.map((turn, i) => (
-                <ChatBubble key={i} role={turn.role} text={turn.text} />
+                <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+                  {turn.role === 'witness' && turn.at === typingAt ? (
+                    <ChatBubble role="witness" text={<Typewriter text={turn.text} onDone={() => setTypingAt(null)} />} />
+                  ) : (
+                    <ChatBubble role={turn.role} text={turn.text} />
+                  )}
+                </motion.div>
               ))}
               {isLoading && <TypingDots />}
               <div ref={chatEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="p-3 border-t border-gold flex gap-2" style={{ background: 'var(--burgundy)' }}>
+            {suggestions.length > 0 && (
+              <div className="px-3 pt-2 flex flex-wrap gap-2 border-t border-brown">
+                {suggestions.map((q) => (
+                  <button
+                    key={q}
+                    disabled={isLoading}
+                    onClick={() => sendMessage(q)}
+                    className="font-inter text-xs px-3 py-1.5 rounded-full border border-brown text-parchment-dark hover:text-parchment hover:border-gold transition-colors disabled:opacity-40"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="p-3 flex gap-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input) } }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input) } else audio.sfx('type', 0.35) }}
                 placeholder="Ask a question…"
                 maxLength={300}
                 disabled={isLoading}
-                className="flex-1 bg-transparent font-inter text-sm text-parchment placeholder-parchment-dark outline-none"
+                className="flex-1 bg-transparent font-inter text-sm text-parchment placeholder-parchment-dark outline-none border-b border-brown focus:border-gold py-1"
               />
               <button
                 onClick={() => sendMessage(input)}
@@ -270,15 +332,48 @@ export default function WitnessPage() {
               >
                 <Send size={16} color="var(--gold)" />
               </button>
-              <Button
-                variant="secondary"
-                onClick={() => setShowPicker(true)}
-                disabled={isLoading}
-                className="text-xs py-1 px-3 flex items-center gap-1"
-              >
+              <Button variant="secondary" onClick={() => setShowPicker(true)} disabled={isLoading} className="text-xs py-1 px-3 flex items-center gap-1">
                 <Package size={12} /> Present
               </Button>
             </div>
+
+            <AnimatePresence>
+              {showStatements && (
+                <motion.aside
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 32 }}
+                  className="absolute inset-y-0 right-0 w-full sm:w-80 overflow-y-auto p-4 border-l border-gold"
+                  style={{ background: 'rgba(23,20,25,0.98)', zIndex: 2 }}
+                  aria-label="Statements"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-cinzel text-xs tracking-[0.25em] text-parchment-dark">ON THE RECORD</p>
+                    <button aria-label="Close statements" onClick={() => setShowStatements(false)}><X size={16} color="var(--parchment)" /></button>
+                  </div>
+                  {statements.length === 0 && <p className="font-caveat text-parchment-dark text-lg">Nothing on the record yet.</p>}
+                  <ul className="space-y-3">
+                    {statements.map((f) => (
+                      <li key={f.id} className="rounded-sm p-3" style={{ background: 'linear-gradient(160deg, var(--parchment-light), var(--parchment))' }}>
+                        <p className="font-cormorant text-obsidian text-base leading-snug">&ldquo;{f.statement}&rdquo;</p>
+                        {f.yieldsStatementId && <p className="font-inter text-[10px] tracking-wide text-brown mt-1 uppercase">Claim on record · compare it with the evidence</p>}
+                      </li>
+                    ))}
+                  </ul>
+                </motion.aside>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {lieBroken && (
+                <motion.div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 3 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <motion.div initial={{ scale: 2.6, rotate: -18, opacity: 0 }} animate={{ scale: 1.4, rotate: -8, opacity: 1 }} transition={{ type: 'spring', stiffness: 380, damping: 16, delay: 0.35 }}>
+                    <Stamp label="STORY CHANGED" variant="unresolved" />
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </main>
@@ -292,13 +387,25 @@ export default function WitnessPage() {
       />
 
       {overlayText && (
-        <EntityOverlay
-          open={!!overlayText}
-          text={overlayText}
-          onDismiss={() => setOverlayText(null)}
-        />
+        <EntityOverlay open={!!overlayText} text={overlayText} onDismiss={() => setOverlayText(null)} />
       )}
-
     </div>
   )
+}
+
+/** Types a witness's reply out, with a soft tick, as if they are choosing their words. */
+function Typewriter({ text, onDone }: { text: string; onDone: () => void }) {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => {
+      setN((v) => {
+        if (v >= text.length) { clearInterval(t); setTimeout(onDone, 0); return v }
+        if (v % 4 === 0) audio.sfx('type', 0.2)
+        return v + 2
+      })
+    }, 22)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text])
+  return <span className={n < text.length ? 'caret' : ''}>{text.slice(0, n)}</span>
 }

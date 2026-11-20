@@ -1,23 +1,14 @@
-export type SoundName = 'ambient' | 'phone-ring' | 'page-rustle' | 'heartbeat'
+import { audio, type SfxName } from './engine'
 
-const cache = new Map<SoundName, HTMLAudioElement>()
+export type SoundName = SfxName | 'page-rustle'
 
 /**
- * Plays a sound with the native Audio object. Does nothing when muted, on the
- * server, or if the file is missing or the browser blocks autoplay.
+ * Plays a one-shot sound through the audio engine. Mute and volume come from the
+ * player's audio settings, so callers don't pass them (the extra arguments are kept
+ * for older call sites and only the volume is used).
  */
-export function playSound(name: SoundName, muted: boolean, volume = 0.6): void {
-  if (muted || typeof window === 'undefined') return
-  try {
-    let audio = cache.get(name)
-    if (!audio) {
-      audio = new Audio(`/assets/audio/${name}.mp3`)
-      cache.set(name, audio)
-    }
-    audio.volume = volume
-    audio.currentTime = 0
-    void audio.play().catch(() => undefined)
-  } catch {
-    // audio is optional
-  }
+export function playSound(name: SoundName, _muted?: boolean, volume = 1): void {
+  audio.sfx(name === 'page-rustle' ? 'page' : name, volume)
 }
+
+export const sfx = (name: SfxName, volume = 1) => audio.sfx(name, volume)

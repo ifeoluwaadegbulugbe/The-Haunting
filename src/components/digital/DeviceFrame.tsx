@@ -6,6 +6,15 @@ export interface DeviceFrameProps {
   className?: string
 }
 
+// Scanlines over every old screen
+const SCANLINES = (
+  <div
+    aria-hidden="true"
+    className="pointer-events-none absolute inset-0 glow-flicker"
+    style={{ background: 'repeating-linear-gradient(0deg, rgba(234,223,201,0.035) 0 1px, transparent 1px 3px)', mixBlendMode: 'screen' }}
+  />
+)
+
 export function DeviceFrame({ device, children, className }: DeviceFrameProps) {
   if (device === 'telco') {
     return (
@@ -25,7 +34,7 @@ export function DeviceFrame({ device, children, className }: DeviceFrameProps) {
             Telephone Company Records
           </span>
         </div>
-        <div className="p-4">{children}</div>
+        <div className="relative p-4">{children}{SCANLINES}</div>
       </div>
     )
   }
@@ -58,7 +67,7 @@ export function DeviceFrame({ device, children, className }: DeviceFrameProps) {
               Clara&apos;s Laptop — 2008
             </span>
           </div>
-          <div className="p-4 overflow-y-auto max-h-72">{children}</div>
+          <div className="relative p-4 overflow-y-auto max-h-72">{children}{SCANLINES}</div>
         </div>
         {/* Base */}
         <div
@@ -91,7 +100,7 @@ export function DeviceFrame({ device, children, className }: DeviceFrameProps) {
           />
         </div>
         {/* Screen */}
-        <div className="p-3 overflow-y-auto max-h-72">{children}</div>
+        <div className="relative p-3 overflow-y-auto max-h-72">{children}{SCANLINES}</div>
         {/* Home button */}
         <div
           className="flex justify-center py-2 border-t"
