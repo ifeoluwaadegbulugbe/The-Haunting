@@ -134,10 +134,13 @@ export function selectNextStep(state: GameState, caseData: Case001): NextStep | 
   const unlocked = selectUnlockedSections(state)
 
   if (!unlocked.archive || sceneLeft > 0) {
+    const remaining = caseData.scene
+      .filter((o) => !state.inspectedObjects.includes(o.id) || o.yieldsEvidence.some((id) => !has(id)))
+      .map((o) => o.name)
     return {
       section: 'scene', href: '/case/001/scene', action: 'Search the study',
       title: 'The study is not finished with you',
-      text: `${sceneLeft} item${sceneLeft === 1 ? '' : 's'} still hidden in the study. Locked rings open once you hold the item they need.`,
+      text: `${sceneLeft} item${sceneLeft === 1 ? '' : 's'} still hidden in the study. Still to search: ${remaining.join(', ')}. A padlocked ring opens once you hold the item it needs.`,
     }
   }
 

@@ -28,8 +28,9 @@ export function NextLead() {
   const router = useRouter()
   const state = useGameStore((s) => s)
   const [dismissed, setDismissed] = useState<string | null>(null)
-  const [openOnBoard, setOpenOnBoard] = useState(false)
-  useEffect(() => setOpenOnBoard(false), [pathname])
+  // Opened by hand while folded (on the board, or in the section the lead points to)
+  const [openHere, setOpenHere] = useState(false)
+  useEffect(() => setOpenHere(false), [pathname])
 
   useEffect(() => {
     setDismissed(sessionStorage.getItem(DISMISSED_KEY))
@@ -37,26 +38,29 @@ export function NextLead() {
 
   const step = hydrated ? selectNextStep(state, CASE_001) : null
   const here = sectionOf(pathname)
-  // The final step is done on the board itself, so the board does not need telling
   const onBoard = here === 'evidence'
-  const visible = Boolean(step && here && step.section !== here && !(onBoard && step.section === 'conclusion'))
+  // Already where the lead points (the board is where the final step happens)
+  const sameSection = Boolean(step && (step.section === here || (onBoard && step.section === 'conclusion')))
+  const visible = Boolean(step && here)
   const key = step ? `${step.section}|${step.text}` : ''
-  // On the board the full card would cover the evidence cards, so it starts folded
-  const collapsed = onBoard ? !openOnBoard : dismissed === key
+  // The full card opens by itself only when it points somewhere else, and never on
+  // the board, where it would cover the evidence cards
+  const folded = onBoard || sameSection
+  const collapsed = folded ? !openHere : dismissed === key
 
   // A soft chime when a new lead appears
   useEffect(() => {
-    if (visible && !collapsed) audio.sfx('chime', 0.5)
-  }, [visible, collapsed, step?.section])
+    if (visible && !folded && !collapsed) audio.sfx('chime', 0.5)
+  }, [visible, folded, collapsed, step?.section])
 
   if (!step || !visible) return null
 
   const collapse = () => {
-    if (onBoard) { setOpenOnBoard(false); return }
+    if (folded) { setOpenHere(false); return }
     sessionStorage.setItem(DISMISSED_KEY, key); setDismissed(key)
   }
   const expand = () => {
-    if (onBoard) { setOpenOnBoard(true); return }
+    if (folded) { setOpenHere(true); return }
     sessionStorage.removeItem(DISMISSED_KEY); setDismissed(null)
   }
   const go = () => { audio.sfx('click'); router.push(step.href) }
@@ -71,7 +75,7 @@ export function NextLead() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0 }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded border border-gold font-inter text-xs text-parchment focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            className="flex items-center gap-2 px-3 py-1.5 rounded border border-gold font-inter text-sm text-parchment hover:border-parchment-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
             style={{ background: 'rgba(14,12,16,0.85)' }}
           >
             <Compass size={14} color="var(--gold)" aria-hidden="true" /> Next lead
@@ -96,7 +100,9 @@ export function NextLead() {
             </p>
             <h3 className="font-cormorant font-bold text-obsidian text-lg leading-tight mt-1">{step.title}</h3>
             <p className="font-inter text-base text-obsidian leading-snug mt-1.5">{step.text}</p>
-            <Button variant="primary" onClick={go} className="mt-3 px-4 py-1.5">{step.action}</Button>
+            {step.section !== here && (
+              <Button variant="primary" onClick={go} className="mt-3 px-4 py-1.5">{step.action}</Button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

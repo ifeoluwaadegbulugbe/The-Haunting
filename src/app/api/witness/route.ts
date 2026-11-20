@@ -5,18 +5,19 @@ import { getProvider } from '@/lib/ai/witness/provider'
 import { resolveWitnessTurn } from '@/lib/ai/witness/resolver'
 import { buildWitnessPrompt } from '@/lib/ai/witness/prompt-builder'
 import { validateReply } from '@/lib/ai/witness/validator'
+import { pickFallback } from '@/lib/ai/witness/fallback'
 
 // ── Request schema ─────────────────────────────────────────────────────────
 
 const WitnessRequestSchema = z.object({
   witnessId: z.enum(['julian', 'margaret', 'dorothea']),
-  message:   z.string().min(1).max(300),
+  message: z.string().min(1).max(300),
   presentedEvidenceId: z.string().optional(),
   snapshot: z.object({
     collectedEvidenceIds: z.array(z.string()).max(50),
-    revealedFactIds:      z.array(z.string()).max(50),
+    revealedFactIds: z.array(z.string()).max(50),
     presentedEvidenceIds: z.array(z.string()).max(50).default([]),
-    trust:                z.number().min(0).max(100),
+    trust: z.number().min(0).max(100),
     recentTurns: z.array(z.object({
       role: z.enum(['player', 'witness']),
       text: z.string().max(400),
@@ -28,7 +29,7 @@ const WitnessRequestSchema = z.object({
 
 const rateLimits = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT = 12
-const WINDOW_MS  = 60_000
+const WINDOW_MS = 60_000
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
@@ -71,12 +72,12 @@ export async function POST(request: NextRequest) {
   if (!checkRateLimit(ip)) {
     const witness = CASE_001.witnesses.find((w) => w.id === witnessId)!
     return NextResponse.json({
-      reply:         witness.fallbackLines.pressure[0],
-      usedFactIds:   [],
+      reply: witness.fallbackLines.pressure[0],
+      usedFactIds: [],
       newlyRevealed: [],
-      trustDelta:    0,
-      mood:          'defensive',
-      fallback:      true,
+      trustDelta: 0,
+      mood: 'defensive',
+      fallback: true,
     })
   }
 
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
     : undefined
 
   // Build prompt
-  const prompt = buildWitnessPrompt(witness, resolverOutput, snapshot.recentTurns, presentedEvidence)
+  const prompt = buildWitnessPrompt(witness, resolverOutput, snapshot.recentTurns, presentedEvidence, message)
 
   // Call provider with timeout
   let raw = ''
@@ -107,7 +108,8 @@ export async function POST(request: NextRequest) {
   const provider = getProvider()
 
   try {
-    raw = await provider.complete(prompt, { temperature: 0.6, maxTokens: 300, json: true })
+    // Room for models that think before answering; the reply itself is capped at 70 words
+    raw = await provider.complete(prompt, { temperature: 0.6, maxTokens: 1024, json: true })
   } catch {
     providerFailed = true
   }
@@ -119,7 +121,7 @@ export async function POST(request: NextRequest) {
     // Retry with stricter suffix
     const strictPrompt = prompt + '\n\nREMINDER: Return ONLY valid JSON. No text outside the JSON object.'
     try {
-      const raw2 = await provider.complete(strictPrompt, { temperature: 0.3, maxTokens: 300, json: true })
+      const raw2 = await provider.complete(strictPrompt, { temperature: 0.3, maxTokens: 1024, json: true })
       validatedReply = validateReply(raw2, allowedFactIds, lockedFacts)
     } catch {
       providerFailed = true
@@ -128,24 +130,28 @@ export async function POST(request: NextRequest) {
 
   // Fallback if still not valid
   if (providerFailed || !validatedReply?.ok) {
-    const fallbackReply = witness.fallbackLines.unknown[0] ?? "I'm afraid I can't answer that."
+    const { line: fallbackReply, mood: fallbackMood } = pickFallback(witness.fallbackLines, {
+      turns: snapshot.recentTurns.filter((t) => t.role === 'player').length,
+      presented: Boolean(presentedEvidenceId),
+      trust: snapshot.trust,
+    })
     const newlyRevealed = buildRevealGuarantee(revealGuarantee)
     const fullReply = newlyRevealed.length > 0
       ? `${fallbackReply} ${newlyRevealed.map((r) => r.statement).join(' ')}`
       : fallbackReply
 
     return NextResponse.json({
-      reply:         fullReply,
-      usedFactIds:   [],
+      reply: fullReply,
+      usedFactIds: [],
       newlyRevealed,
       trustDelta,
-      mood:          'evasive',
-      fallback:      true,
+      mood: fallbackMood,
+      fallback: true,
     })
   }
 
   // Build guarantee lines
-  const usedFactIds  = validatedReply.reply!.usedFactIds
+  const usedFactIds = validatedReply.reply!.usedFactIds
   const newlyRevealed = buildRevealGuarantee(
     revealGuarantee.filter((f) => !usedFactIds.includes(f.id))
   )
@@ -156,18 +162,18 @@ export async function POST(request: NextRequest) {
     : validatedReply.reply!.reply
 
   return NextResponse.json({
-    reply:         finalReply,
-    usedFactIds:   [...usedFactIds, ...newlyRevealed.map((r) => r.factId)],
+    reply: finalReply,
+    usedFactIds: [...usedFactIds, ...newlyRevealed.map((r) => r.factId)],
     newlyRevealed,
     trustDelta,
-    mood:          validatedReply.reply!.mood,
+    mood: validatedReply.reply!.mood,
   })
 }
 
 function buildRevealGuarantee(facts: Array<{ id: string; statement: string; yieldsStatementId?: string }>) {
   return facts.map((f) => ({
-    factId:      f.id,
+    factId: f.id,
     statementId: f.yieldsStatementId,
-    statement:   f.statement,
+    statement: f.statement,
   }))
 }

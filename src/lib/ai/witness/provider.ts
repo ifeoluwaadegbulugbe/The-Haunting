@@ -79,9 +79,13 @@ export class GeminiProvider implements AIProvider {
       if (!res.ok) throw new Error(`Gemini ${res.status}`)
 
       const data = await res.json() as {
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }>
       }
-      return data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      // Newer models can return several parts; skip any thinking parts
+      return (data.candidates?.[0]?.content?.parts ?? [])
+        .filter((p) => !p.thought && typeof p.text === 'string')
+        .map((p) => p.text)
+        .join('')
     } finally {
       clearTimeout(timeout)
     }
@@ -142,8 +146,17 @@ export function getProvider(): AIProvider {
 
   const providerName = process.env.AI_PROVIDER ?? 'gemini'
   const apiKey = process.env.AI_API_KEY ?? ''
-  const model = process.env.AI_MODEL ?? 'gemini-1.5-flash'
+  // The model is configuration, never hard-coded (models are retired over time)
+  const model = process.env.AI_MODEL ?? ''
+  if (!apiKey || !model) return new UnconfiguredProvider()
 
   if (providerName === 'groq') return new GroqProvider(apiKey, model)
   return new GeminiProvider(apiKey, model)
+}
+
+/** Used when AI_API_KEY or AI_MODEL is missing: every call fails, so routes use scripted lines. */
+class UnconfiguredProvider implements AIProvider {
+  async complete(): Promise<string> {
+    throw new Error('AI provider not configured')
+  }
 }

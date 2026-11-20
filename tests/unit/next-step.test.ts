@@ -14,6 +14,7 @@ describe('selectNextStep', () => {
     const s = selectNextStep(state({ collectedEvidence: held(['EV-01', 'EV-07']) }), CASE_001)
     expect(s?.section).toBe('scene')
     expect(s?.text).toContain('8 items')
+    expect(s?.text).toContain('Mantel Clock')
   })
 
   it('points to the archive once the study is searched', () => {

@@ -78,6 +78,10 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
   await expect(page).toHaveURL(/\/case\/001\/scene$/)
   // A locked object cannot be inspected yet
   await expect(hotspot(page, 'Mantel Clock')).toHaveAttribute('title', /Requires/)
+  // The next lead is always there, folded, and says what is left in the study
+  await page.getByRole('button', { name: 'Next lead' }).click()
+  await expect(page.getByRole('status', { name: 'Next lead' })).toContainText('Still to search')
+  await page.getByRole('button', { name: 'Hide the next lead' }).click()
   for (const name of SCENE_ORDER) await inspect(page, name)
 
   // ── Archive ─────────────────────────────────────────────────────────────
