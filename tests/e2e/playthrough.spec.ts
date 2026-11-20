@@ -81,7 +81,12 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
   for (const name of SCENE_ORDER) await inspect(page, name)
 
   // ── Archive ─────────────────────────────────────────────────────────────
-  await page.goto('/case/001/archive')
+  // Once the study is searched, the next lead points to the archive
+  await clearOverlays(page)
+  const lead = page.getByRole('status', { name: 'Next lead' })
+  await expect(lead).toContainText('The study is searched')
+  await lead.getByRole('button', { name: 'Open the Digital Archives' }).click()
+  await expect(page).toHaveURL(/\/case\/001\/archive$/)
   for (const tab of ['Telephone Records', "Edmund's Mobile", "Clara's Laptop"]) {
     await page.getByRole('button', { name: tab, exact: true }).click()
     for (; ;) {

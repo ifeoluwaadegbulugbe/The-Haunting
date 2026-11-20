@@ -7,6 +7,7 @@ import { EntityManifestations } from '@/components/entity/EntityManifestations'
 import { AudioDirector } from '@/components/audio/AudioDirector'
 import { AudioSettings } from '@/components/audio/AudioSettings'
 import { FxLayer } from '@/components/fx/FxLayer'
+import { NextLead } from '@/components/archive/NextLead'
 import '@/styles/globals.css'
 
 const cinzel = Cinzel({
@@ -60,6 +61,7 @@ export default function RootLayout({
           <AudioDirector />
           <AudioSettings />
           <FxLayer />
+          <NextLead />
         </HydrationGuard>
         <HauntLevelSync />
         <NotificationTray />

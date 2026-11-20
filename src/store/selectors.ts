@@ -107,3 +107,71 @@ export function selectAvailableContradictions(
 
   return caseData.contradictions.filter((cx) => held(cx.a) && held(cx.b))
 }
+
+// ── Next lead ──────────────────────────────────────────────────────────────
+// What the player should do next, worked out from game state alone.
+
+export type CaseSection = 'scene' | 'archive' | 'witnesses' | 'evidence' | 'conclusion'
+
+export interface NextStep {
+  section: CaseSection
+  href: string
+  title: string
+  text: string
+  action: string
+}
+
+const NON_DEFAULT_FACTS_NEEDED = 6
+const CONTRADICTIONS_NEEDED = 3
+
+export function selectNextStep(state: GameState, caseData: Case001): NextStep | null {
+  if (state.verdict) return null
+  const collected = new Set(Object.keys(state.collectedEvidence))
+  const has = (id: string) => collected.has(id)
+
+  const sceneEvidence = caseData.scene.flatMap((o) => o.yieldsEvidence)
+  const sceneLeft = sceneEvidence.filter((id) => !has(id)).length
+  const unlocked = selectUnlockedSections(state)
+
+  if (!unlocked.archive || sceneLeft > 0) {
+    return {
+      section: 'scene', href: '/case/001/scene', action: 'Search the study',
+      title: 'The study is not finished with you',
+      text: `${sceneLeft} item${sceneLeft === 1 ? '' : 's'} still hidden in the study. Locked rings open once you hold the item they need.`,
+    }
+  }
+
+  const archiveEvidence = caseData.digital.flatMap((r) => (r.yieldsEvidence ? [r.yieldsEvidence] : []))
+  const archiveLeft = archiveEvidence.filter((id) => !has(id)).length
+  if (archiveLeft > 0) {
+    return {
+      section: 'archive', href: '/case/001/archive', action: 'Open the Digital Archives',
+      title: 'The study is searched',
+      text: `The family's phone records, laptop and mobile were recovered. ${archiveLeft} record${archiveLeft === 1 ? '' : 's'} there still hold${archiveLeft === 1 ? 's' : ''} evidence. Log them.`,
+    }
+  }
+
+  const facts = state.revealedFacts.filter((id) => !['M1', 'M2', 'D1', 'J1'].includes(id)).length
+  if (facts < NON_DEFAULT_FACTS_NEEDED) {
+    return {
+      section: 'witnesses', href: '/case/001/witnesses/margaret', action: 'Question the witnesses',
+      title: 'Someone is not telling the truth',
+      text: `Interview Margaret, Dorothea and Julian. When a story does not fit, present the evidence that breaks it. New statements: ${facts} of ${NON_DEFAULT_FACTS_NEEDED}.`,
+    }
+  }
+
+  const flagged = state.contradictionsFlagged.length
+  if (flagged < CONTRADICTIONS_NEEDED) {
+    return {
+      section: 'evidence', href: '/case/001/evidence', action: 'Open the evidence board',
+      title: 'The stories do not agree',
+      text: `On the evidence board, the Contradictions panel lists statements and evidence that cannot both be true. Confirm them. Flagged: ${flagged} of ${CONTRADICTIONS_NEEDED}.`,
+    }
+  }
+
+  return {
+    section: 'conclusion', href: '/case/001/conclusion', action: 'Go to the Conclusion',
+    title: 'You know enough to name them',
+    text: 'Connect evidence with red string and set the timeline in order on the board, then submit your theory in the Conclusion.',
+  }
+}
