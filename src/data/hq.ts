@@ -1,7 +1,6 @@
 /**
  * The investigation headquarters: one room, its clickable objects and the case archive.
- * Hotspot positions are in % of the room picture. They are placed for the stand-in
- * picture; re-place them when public/assets/scene/hq-room.jpg is added.
+ * Hotspot positions are in % of public/assets/scene/hq-room.jpg (1408×768).
  */
 export type HqObjectId = 'desk' | 'telephone' | 'cabinet' | 'wall' | 'clock' | 'door'
 
@@ -15,20 +14,20 @@ export interface HqObject {
 export const HQ_ROOM = {
   src: '/assets/scene/hq-room.jpg',
   fallbackSrc: '/assets/scene/study-scene.jpg',
-  ratio: 1376 / 768,
+  ratio: 1408 / 768,
   glows: [
-    { x: 40, y: 53, size: 9 },
-    { x: 84, y: 24, size: 6 },
+    { x: 43.3, y: 49, size: 9 }, // oil lamp
+    { x: 64, y: 61, size: 8 }, // fireplace
   ],
 }
 
 export const HQ_OBJECTS: HqObject[] = [
-  { id: 'desk', name: 'Investigation Desk', hint: 'Your current case file', hotspot: { x: 50, y: 63, r: 5 } },
-  { id: 'telephone', name: 'Telephone', hint: 'Assignments come by telephone', hotspot: { x: 16.1, y: 61, r: 5 } },
-  { id: 'cabinet', name: 'Case Cabinet', hint: 'The case archive', hotspot: { x: 25, y: 74, r: 5 } },
-  { id: 'wall', name: 'Evidence Wall', hint: 'Open the evidence board', hotspot: { x: 50, y: 30, r: 5 } },
-  { id: 'clock', name: 'Grandfather Clock', hint: 'It keeps a strange time', hotspot: { x: 74.1, y: 37, r: 4.5 } },
-  { id: 'door', name: 'Locked Door', hint: 'Sealed', hotspot: { x: 93, y: 55, r: 5 } },
+  { id: 'desk', name: 'Investigation Desk', hint: 'Your current case file', hotspot: { x: 45, y: 67, r: 5 } },
+  { id: 'telephone', name: 'Telephone', hint: 'Assignments come by telephone', hotspot: { x: 7.5, y: 54, r: 4.5 } },
+  { id: 'cabinet', name: 'Case Cabinet', hint: 'The case archive', hotspot: { x: 24, y: 50, r: 5 } },
+  { id: 'wall', name: 'Evidence Wall', hint: 'Open the evidence board', hotspot: { x: 40, y: 33, r: 5 } },
+  { id: 'clock', name: 'Grandfather Clock', hint: 'It keeps a strange time', hotspot: { x: 77.7, y: 40, r: 4.5 } },
+  { id: 'door', name: 'Locked Door', hint: 'Sealed', hotspot: { x: 86, y: 47, r: 4 } }, // left side of the door, so it stays in frame when the room is cropped
 ]
 
 export interface ArchiveCase {
