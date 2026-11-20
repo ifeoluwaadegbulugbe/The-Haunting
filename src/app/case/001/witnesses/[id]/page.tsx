@@ -19,6 +19,7 @@ import { evaluateEntityRules, dispatchEntityActions } from '@/lib/entity'
 import { playSound } from '@/lib/audio'
 import { audio } from '@/lib/audio/engine'
 import { useAsset } from '@/lib/useAsset'
+import { pickFallback } from '@/lib/ai/witness/fallback'
 import { CASE_001 } from '@/data/case001'
 import { SUGGESTED_QUESTIONS } from '@/data/case001/questions'
 import type { Evidence } from '@/types'
@@ -41,7 +42,7 @@ export default function WitnessPage() {
   const state = useGameStore((s) => s)
   const {
     witnessChats, witnessTrust, collectedEvidence, revealedFacts,
-    presentedEvidence, investigator, 
+    presentedEvidence, investigator,
     setLastRoute, addChatTurn, setTrust, revealFact,
     markEvidencePresented, addAttention, addEntityMessage,
     disturbEvidence, plantEvidence, lockObject, unlockObject, fireRule,
@@ -128,15 +129,19 @@ export default function WitnessPage() {
         role: t.role,
         text: String(t.text ?? '').slice(0, 300),
       }))
-      .filter((t) => t.text.length > 0),
+        .filter((t) => t.text.length > 0),
     }
 
     try {
-      const res = await fetch('/api/witness', {
+      const post = () => fetch('/api/witness', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ witnessId, message, presentedEvidenceId: evidenceId, snapshot }),
       })
+      // A cold start or a slow model can time out once; try a second time before giving up
+      let res = await post().catch(() => null)
+      if (!res || res.status >= 500) res = await post()
+      if (!res.ok) console.warn(`[witness] request failed with status ${res.status}`)
 
       const data = (await res.json().catch(() => ({}))) as {
         reply?: unknown
@@ -184,9 +189,13 @@ export default function WitnessPage() {
       }
 
     } catch {
-      // Network error — show scripted fallback
-      const fallback = witness.fallbackLines.unknown[0] ?? "I cannot answer that right now."
-      addChatTurn(witnessId, { role: 'witness', text: fallback, at: Date.now() })
+      // Network error: a scripted line that fits the moment, rotating so it does not repeat
+      const { line } = pickFallback(witness.fallbackLines, {
+        turns: turns.filter((t) => t.role === 'player').length + 1,
+        presented: Boolean(evidenceId),
+        trust,
+      })
+      addChatTurn(witnessId, { role: 'witness', text: line, at: Date.now() })
     } finally {
       setIsLoading(false)
     }

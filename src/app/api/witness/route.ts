@@ -25,6 +25,9 @@ const WitnessRequestSchema = z.object({
   }),
 })
 
+// Two model calls of up to 12 s each must fit inside the serverless time limit
+export const maxDuration = 30
+
 // ── In-memory rate limiter ─────────────────────────────────────────────────
 
 const rateLimits = new Map<string, { count: number; resetAt: number }>()
@@ -110,8 +113,9 @@ export async function POST(request: NextRequest) {
   try {
     // Room for models that think before answering; the reply itself is capped at 70 words
     raw = await provider.complete(prompt, { temperature: 0.6, maxTokens: 1024, json: true })
-  } catch {
+  } catch (e) {
     providerFailed = true
+    logFailure(witnessId, 'provider', e)
   }
 
   // Validate reply; retry once if failed
@@ -123,8 +127,10 @@ export async function POST(request: NextRequest) {
     try {
       const raw2 = await provider.complete(strictPrompt, { temperature: 0.3, maxTokens: 1024, json: true })
       validatedReply = validateReply(raw2, allowedFactIds, lockedFacts)
-    } catch {
+      if (!validatedReply.ok) logFailure(witnessId, 'validation', validatedReply.reason)
+    } catch (e) {
       providerFailed = true
+      logFailure(witnessId, 'provider-retry', e)
     }
   }
 
@@ -168,6 +174,14 @@ export async function POST(request: NextRequest) {
     trustDelta,
     mood: validatedReply.reply!.mood,
   })
+}
+
+/** Server log only: why a scripted line was used. Never the key, the prompt or the player's message. */
+function logFailure(witnessId: string, stage: string, detail: unknown) {
+  const reason = detail instanceof Error
+    ? (detail.name === 'AbortError' ? 'timeout' : detail.message)
+    : String(detail)
+  console.warn(`[witness] ${witnessId} ${stage} failed: ${reason.slice(0, 120)}`)
 }
 
 function buildRevealGuarantee(facts: Array<{ id: string; statement: string; yieldsStatementId?: string }>) {
