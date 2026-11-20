@@ -62,7 +62,7 @@ export function EvidenceCard({
         cursor: isAnchor ? 'default' : 'grab',
         zIndex: lifted ? 9 : 5,
         touchAction: 'none',
-        transform: lifted ? 'scale(1.07) rotate(-2deg)' : 'scale(1) rotate(0deg)',
+        transform: lifted ? 'scale(1.07) rotate(-2deg)' : `scale(1) rotate(${cardTilt(evidence.id)}deg)`,
         filter: lifted ? 'drop-shadow(0 18px 18px rgba(14,12,16,0.6))' : 'drop-shadow(0 4px 6px rgba(14,12,16,0.5))',
         transition: 'transform 0.18s ease, filter 0.18s ease',
       }}
@@ -81,14 +81,7 @@ export function EvidenceCard({
           className="w-full mb-2 flex items-center justify-center rounded-sm"
           style={{ height: '70px', background: 'var(--brown)', overflow: 'hidden' }}
         >
-          {evidence.assetPath ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={evidence.assetPath} alt={evidence.name} draggable={false} className="w-full h-full object-cover pointer-events-none" />
-          ) : (
-            <span className="font-inter text-[10px] text-parchment-dark opacity-50 text-center px-1 leading-tight">
-              {evidence.id}
-            </span>
-          )}
+          <CardThumb evidence={evidence} />
         </div>
         {/* Label */}
         <p className="font-inter text-[10px] text-obsidian leading-tight text-center truncate">
@@ -110,4 +103,54 @@ export function EvidenceCard({
       />
     </div>
   )
+}
+
+// Close-up photographs the player has already seen, reused as card pictures
+const PHOTO_FOR: Record<string, string> = {
+  'EV-01': '/assets/evidence/telephone.jpg',
+  'EV-03': '/assets/evidence/diary.jpg',
+  'EV-06': '/assets/evidence/cabinet.jpg',
+  'EV-07': '/assets/evidence/recorder.jpg',
+  'EV-08': '/assets/evidence/clock.jpg',
+  'EV-10': '/assets/evidence/rug-notice.jpg',
+}
+
+/** The picture on a board card: a photo where one exists, otherwise a small drawn document. */
+function CardThumb({ evidence }: { evidence: Evidence }) {
+  const src = evidence.assetPath ?? PHOTO_FOR[evidence.id]
+  if (src) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={src} alt={evidence.name} draggable={false} className="w-full h-full object-cover pointer-events-none" />
+  }
+  const k = evidence.kind
+  return (
+    <div aria-hidden="true" className="w-full h-full p-1.5" style={{ background: k === 'email' || k === 'profile' || k === 'callRecord' || k === 'audio' ? 'var(--ink)' : 'var(--parchment)' }}>
+      {k === 'audio' ? (
+        <div className="h-full flex items-center gap-[2px]">
+          {Array.from({ length: 22 }, (_, i) => <span key={i} className="flex-1 rounded-sm" style={{ height: 6 + ((i * 37) % 26), background: 'var(--candle)', opacity: 0.85 }} />)}
+        </div>
+      ) : k === 'callRecord' ? (
+        <div className="space-y-1 pt-1">
+          {[0, 1, 2, 3].map((i) => <div key={i} className="flex gap-1"><span className="h-1 w-6 rounded" style={{ background: 'var(--parchment-dark)', opacity: 0.6 }} /><span className="h-1 flex-1 rounded" style={{ background: i === 2 ? 'var(--thread)' : 'var(--parchment-dark)', opacity: i === 2 ? 1 : 0.4 }} /></div>)}
+        </div>
+      ) : k === 'email' || k === 'profile' ? (
+        <div className="space-y-1">
+          <span className="block h-2 w-3/5 rounded" style={{ background: 'var(--gold)', opacity: 0.7 }} />
+          {[0, 1, 2].map((i) => <span key={i} className="block h-1 rounded" style={{ width: `${90 - i * 18}%`, background: 'var(--parchment-dark)', opacity: 0.5 }} />)}
+        </div>
+      ) : (
+        <div className="space-y-1">
+          <span className="block h-2 w-4/5 rounded-sm" style={{ background: 'var(--obsidian)', opacity: 0.75 }} />
+          {[0, 1, 2, 3, 4].map((i) => <span key={i} className="block h-[3px] rounded" style={{ width: `${96 - ((i * 23) % 30)}%`, background: 'var(--brown)', opacity: 0.55 }} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** A small fixed tilt per card, so the board looks pinned by hand. */
+export function cardTilt(id: string): number {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0
+  return ((Math.abs(h) % 7) - 3) * 0.8
 }

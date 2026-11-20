@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Send, Package, ScrollText, X } from 'lucide-react'
+import { AnimatePresence, motion, useAnimate } from 'framer-motion'
+import { ArrowLeft, Send, Package, ScrollText, X, Gavel } from 'lucide-react'
 import { Button, Stamp } from '@/components/ui'
 import { TopBar } from '@/components/archive/TopBar'
 import { WitnessPortrait, type WitnessMood } from '@/components/witness/WitnessPortrait'
@@ -20,9 +20,15 @@ import { playSound } from '@/lib/audio'
 import { audio } from '@/lib/audio/engine'
 import { useAsset } from '@/lib/useAsset'
 import { pickFallback } from '@/lib/ai/witness/fallback'
+import { contradictionForChallenge } from '@/lib/evidence/contradictions'
 import { CASE_001 } from '@/data/case001'
 import { SUGGESTED_QUESTIONS } from '@/data/case001/questions'
-import type { Evidence } from '@/types'
+import type { Evidence, WitnessFact } from '@/types'
+
+/** What the witness is on record as saying: the lie they told, for claims later broken. */
+function claimText(f: WitnessFact): string {
+  return f.yieldsStatementId && f.deniedLine ? f.deniedLine : f.statement
+}
 
 const WITNESS_IDS = ['margaret', 'dorothea', 'julian'] as const
 type WitnessId = typeof WITNESS_IDS[number]
@@ -44,7 +50,7 @@ export default function WitnessPage() {
     witnessChats, witnessTrust, collectedEvidence, revealedFacts,
     presentedEvidence, investigator,
     setLastRoute, addChatTurn, setTrust, revealFact,
-    markEvidencePresented, addAttention, addEntityMessage,
+    markEvidencePresented, addAttention, addEntityMessage, flagContradiction,
     disturbEvidence, plantEvidence, lockObject, unlockObject, fireRule,
   } = state
 
@@ -58,6 +64,10 @@ export default function WitnessPage() {
   const [lieBroken, setLieBroken] = useState(false)
   const [typingAt, setTypingAt] = useState<number | null>(null)
   const [showStatements, setShowStatements] = useState(false)
+  // Challenging a statement: the claim the player is about to contradict with evidence
+  const [challenge, setChallenge] = useState<WitnessFact | null>(null)
+  const [verdictStamp, setVerdictStamp] = useState<{ label: string; broken: boolean } | null>(null)
+  const [shakeScope, shake] = useAnimate()
   const chatEndRef = useRef<HTMLDivElement>(null)
   const roomArt = useAsset('/assets/ui/interview-room.jpg')
 
@@ -203,7 +213,39 @@ export default function WitnessPage() {
   }, [isLoading, witnessId, trust, turns, collectedEvidence, revealedFacts, presentedEvidence])
 
   const handlePresentEvidence = (evidence: Evidence) => {
+    if (challenge) return challengeWith(challenge, evidence)
     sendMessage(`I'd like to show you this: ${evidence.name}.`, evidence.id)
+  }
+
+  // The player points at a claim and puts down the evidence that breaks it.
+  // Whether it breaks is decided by the contradiction table (§9.8), never by the AI.
+  // Choosing the pair is the player explicitly flagging it, so a match confirms it.
+  const challengeWith = async (fact: WitnessFact, evidence: Evidence) => {
+    setChallenge(null)
+    setShowStatements(false)
+    const cx = contradictionForChallenge(fact.yieldsStatementId, evidence.id, CASE_001.contradictions)
+    const quote = claimText(fact)
+    const short = quote.length > 70 ? `${quote.slice(0, 67)}\u2026` : quote
+    await sendMessage(`You told me: "${short}" Then explain this: ${evidence.name}.`, evidence.id)
+
+    if (cx) {
+      const already = useGameStore.getState().contradictionsFlagged.includes(cx.id)
+      if (shakeScope.current) void shake(shakeScope.current, { x: [0, -16, 14, -9, 6, -3, 0] }, { duration: 0.5 })
+      audio.sfx('stamp', 1)
+      setTimeout(() => audio.sfx('sting', 0.9), 200)
+      setVerdictStamp({ label: already ? 'ALREADY PROVEN' : 'CONTRADICTED', broken: true })
+      setCornered(true)
+      if (!already) {
+        flagContradiction(cx.id)
+        addAttention(10)
+        const actions = evaluateEntityRules(useGameStore.getState(), { type: 'contradictionConfirmed', ref: cx.id }, CASE_001)
+        dispatchEntityActions(actions, dispatchStore, investigator.name, (line) => setOverlayText(line))
+      }
+    } else {
+      audio.sfx('deny', 0.8)
+      setVerdictStamp({ label: 'IT HOLDS', broken: false })
+    }
+    setTimeout(() => setVerdictStamp(null), 2600)
   }
 
   if (!hydrated) return null
@@ -239,7 +281,7 @@ export default function WitnessPage() {
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(14,12,16,0.85) 100%)' }} />
       </div>
 
-      <main className="relative max-w-5xl mx-auto px-4 py-6 flex flex-col gap-4" style={{ zIndex: 1 }}>
+      <main ref={shakeScope} className="relative max-w-5xl mx-auto px-4 py-6 flex flex-col gap-4" style={{ zIndex: 1 }}>
         <div className="flex items-center justify-between">
           <Link href="/hq" className="inline-flex items-center gap-2 font-inter text-xs text-parchment-dark hover:text-parchment">
             <ArrowLeft size={14} /> Back to HQ
@@ -341,8 +383,17 @@ export default function WitnessPage() {
               >
                 <Send size={16} color="var(--gold)" />
               </button>
-              <Button variant="secondary" onClick={() => setShowPicker(true)} disabled={isLoading} className="text-xs py-1 px-3 flex items-center gap-1">
+              <Button variant="secondary" onClick={() => { setChallenge(null); setShowPicker(true) }} disabled={isLoading} className="text-xs py-1 px-3 flex items-center gap-1">
                 <Package size={12} /> Present
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => { audio.sfx('page'); setShowStatements(true) }}
+                disabled={isLoading || statements.length === 0}
+                tooltip="Nothing on the record yet"
+                className="text-xs py-1 px-3 flex items-center gap-1"
+              >
+                <Gavel size={12} /> Challenge
               </Button>
             </div>
 
@@ -362,20 +413,59 @@ export default function WitnessPage() {
                     <button aria-label="Close statements" onClick={() => setShowStatements(false)}><X size={16} color="var(--parchment)" /></button>
                   </div>
                   {statements.length === 0 && <p className="font-caveat text-parchment-dark text-lg">Nothing on the record yet.</p>}
+                  {statements.length > 0 && (
+                    <p className="font-inter text-xs text-parchment-dark mb-3">Pick a statement you can disprove, then put down the evidence that breaks it.</p>
+                  )}
                   <ul className="space-y-3">
-                    {statements.map((f) => (
-                      <li key={f.id} className="rounded-sm p-3" style={{ background: 'linear-gradient(160deg, var(--parchment-light), var(--parchment))' }}>
-                        <p className="font-cormorant text-obsidian text-base leading-snug">&ldquo;{f.statement}&rdquo;</p>
-                        {f.yieldsStatementId && <p className="font-inter text-[10px] tracking-wide text-brown mt-1 uppercase">Claim on record · compare it with the evidence</p>}
-                      </li>
-                    ))}
+                    {statements.map((f, i) => {
+                      const broken = f.yieldsStatementId
+                        ? CASE_001.contradictions.some((c) => (c.a === f.yieldsStatementId || c.b === f.yieldsStatementId) && state.contradictionsFlagged.includes(c.id))
+                        : false
+                      return (
+                        <motion.li
+                          key={f.id}
+                          initial={{ opacity: 0, x: 24, rotate: 1.5 }}
+                          animate={{ opacity: 1, x: 0, rotate: i % 2 ? 0.6 : -0.6 }}
+                          transition={{ delay: i * 0.05 }}
+                          whileHover={{ rotate: 0, y: -2 }}
+                          className="relative rounded-sm p-3"
+                          style={{ background: 'linear-gradient(160deg, var(--parchment-light), var(--parchment))', boxShadow: '0 6px 14px rgba(14,12,16,0.45)' }}
+                        >
+                          <p className="font-cormorant text-obsidian text-base leading-snug">&ldquo;{claimText(f)}&rdquo;</p>
+                          {f.yieldsStatementId && <p className="font-inter text-[10px] tracking-wide text-brown mt-1 uppercase">Claim on record</p>}
+                          <div className="flex items-center justify-between mt-2">
+                            {broken ? (
+                              <span className="font-cinzel text-[10px] tracking-[0.2em]" style={{ color: 'var(--thread)' }}>CONTRADICTED</span>
+                            ) : <span />}
+                            <button
+                              onClick={() => { audio.sfx('pin', 0.6); setChallenge(f); setShowPicker(true) }}
+                              disabled={isLoading}
+                              className="font-inter text-xs px-3 py-1 rounded border border-brown text-obsidian hover:border-obsidian disabled:opacity-40"
+                              aria-label={`Challenge: ${claimText(f)}`}
+                            >
+                              Challenge
+                            </button>
+                          </div>
+                        </motion.li>
+                      )
+                    })}
                   </ul>
                 </motion.aside>
               )}
             </AnimatePresence>
 
             <AnimatePresence>
-              {lieBroken && (
+              {verdictStamp && (
+                <motion.div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 4, background: verdictStamp.broken ? 'rgba(14,12,16,0.35)' : undefined }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <motion.div role="status" initial={{ scale: 3.2, rotate: -22, opacity: 0 }} animate={{ scale: verdictStamp.broken ? 1.8 : 1.2, rotate: -9, opacity: 1 }} transition={{ type: 'spring', stiffness: 420, damping: 15 }}>
+                    <Stamp label={verdictStamp.label} variant={verdictStamp.broken ? 'unresolved' : 'solved'} />
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {lieBroken && !verdictStamp && (
                 <motion.div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 3 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <motion.div initial={{ scale: 2.6, rotate: -18, opacity: 0 }} animate={{ scale: 1.4, rotate: -8, opacity: 1 }} transition={{ type: 'spring', stiffness: 380, damping: 16, delay: 0.35 }}>
                     <Stamp label="STORY CHANGED" variant="unresolved" />
@@ -393,6 +483,7 @@ export default function WitnessPage() {
         allEvidence={CASE_001.evidence}
         onSelect={handlePresentEvidence}
         onClose={() => setShowPicker(false)}
+        title={challenge ? 'What proves this wrong?' : 'Present Evidence'}
       />
 
       {overlayText && (

@@ -7,7 +7,7 @@ import { TopBar } from '@/components/archive/TopBar'
 import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { selectProgress, selectRank, selectUnlockedSections } from '@/store/selectors'
-import { ACHIEVEMENTS, thoroughness } from '@/data/achievements'
+import { ACHIEVEMENTS, thoroughness, OPTIONAL_TOTAL } from '@/data/achievements'
 import { CASE_001 } from '@/data/case001'
 import { spring } from '@/lib/motion'
 
@@ -44,7 +44,7 @@ export default function ProfilePage() {
             <ProgressBar value={progress} label={`Investigation ${progress}%`} />
             <dl className="grid grid-cols-2 gap-3 font-inter text-sm text-brown">
               <div><dt className="text-xs uppercase tracking-wide">Final score</dt><dd className="text-obsidian font-semibold text-lg tabular-nums">{state.verdict ? `${state.verdict.score} / 100` : '—'}</dd></div>
-              <div><dt className="text-xs uppercase tracking-wide">Hidden details</dt><dd className="text-obsidian font-semibold text-lg tabular-nums">{thoroughness(state)} / 4</dd></div>
+              <div><dt className="text-xs uppercase tracking-wide">Hidden details</dt><dd className="text-obsidian font-semibold text-lg tabular-nums">{thoroughness(state)} / {OPTIONAL_TOTAL}</dd></div>
               <div><dt className="text-xs uppercase tracking-wide">Evidence</dt><dd className="text-obsidian font-semibold text-lg tabular-nums">{Object.keys(state.collectedEvidence).length}</dd></div>
               <div><dt className="text-xs uppercase tracking-wide">Time in the field</dt><dd className="text-obsidian font-semibold text-lg tabular-nums">{minutes}m</dd></div>
             </dl>

@@ -106,6 +106,10 @@ function Diary() {
           style={{ background: 'repeating-linear-gradient(180deg, var(--parchment-dark) 0 6px, transparent 6px 10px)' }}
         />
         <p className="font-inter text-xs text-brown mt-4 italic">The last pages have been torn out.</p>
+        {/* pencilled inside the back cover, beside the key: the laptop puzzle's clue */}
+        <p className={`${hand} mt-3`} style={{ transform: 'rotate(-2deg)' }}>
+          New laptop password: her name, then the day of her concert.
+        </p>
         {/* small key taped inside the back cover */}
         <svg viewBox="0 0 120 40" className="absolute -bottom-4 right-6 w-28" role="img" aria-label="A small key taped inside the back cover">
           <rect x="18" y="8" width="70" height="24" fill="rgba(234,223,201,0.7)" transform="rotate(-8 53 20)" />

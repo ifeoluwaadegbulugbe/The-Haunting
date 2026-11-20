@@ -29,7 +29,7 @@ Seven files in `.kiro/steering/`. Four load on every request, and three load onl
 
 ## Specs
 
-Five specs in `.kiro/specs/`, each written as `requirements.md`, then `design.md`, then `tasks.md`. Each was approved before implementation.
+Six specs in `.kiro/specs/`, each written as `requirements.md`, then `design.md`, then `tasks.md`. Each was approved before implementation.
 
 | Spec | What it delivered |
 |---|---|
@@ -38,6 +38,7 @@ Five specs in `.kiro/specs/`, each written as `requirements.md`, then `design.md
 | `03-ai-witnesses-and-entity` | Provider interface (Gemini, Groq, deterministic mock), fact resolver, reply validator, `/api/witness`, interrogation UI, entity rule engine and dispatcher |
 | `04-evidence-and-conclusion` | Evidence board with threads, contradictions, timeline, theory form, deterministic scoring, reveal sequence and report card |
 | `05-immersive-experience` | Web Audio engine with music and effects, HQ room, case assignment cinematic, interactive close-ups, optional hidden clues, interview room, entity manifestations, reveal walkthrough, achievements and save v2 |
+| `06-interactive-investigation` | Challenging witness statements, device puzzles in the archives, a physical evidence board, the 11:13 calls, the investigator's notebook and Lily's room by torchlight |
 
 Each task was sized at five files or fewer and ended with typecheck, tests and case validation before commit.
 
@@ -108,4 +109,5 @@ Appended automatically by the `usage-log` hook after each task.
 | — | Trust-based unlocks, golden-path test, entity and verdict routes | resolver, conditions, API routes, tests |
 | — | Persistent lockouts, re-verify, haunt effects, responsive pass | store, scene, board, entity components |
 | 2026-11-18 | Hooks, KIRO_USAGE.md and README | `docs/KIRO_USAGE.md`, `package.json` |
+| — | Spec 06 interactive investigation | witness page, archive puzzles, board physics, calls, notebook, Lily's room, truth file §9.8, §9.10, §9.11 |
 | — | Spec 05 immersive experience | audio, room, cinematic, close-up, fx, achievement and profile modules; `docs/ASSETS.md` |

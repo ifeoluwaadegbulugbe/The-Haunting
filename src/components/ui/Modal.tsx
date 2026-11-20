@@ -50,6 +50,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
           background: transparent;
           border: none;
           padding: 0;
+          margin: auto;
           max-width: 90vw;
         }
       `}</style>

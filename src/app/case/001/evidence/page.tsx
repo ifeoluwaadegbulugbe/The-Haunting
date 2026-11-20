@@ -64,6 +64,13 @@ export default function EvidenceBoardPage() {
   }, [linkNote])
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null)
   const [connectFrom, setConnectFrom] = useState<string | null>(null)
+  // A wrong connection: the string drops off the board (the link is still recorded as not conclusive)
+  const [dropped, setDropped] = useState<{ a: string; b: string; key: number } | null>(null)
+  useEffect(() => {
+    if (!dropped) return
+    const t = setTimeout(() => setDropped(null), 1300)
+    return () => clearTimeout(t)
+  }, [dropped])
 
   useEffect(() => { setLastRoute('/case/001/evidence') }, [setLastRoute])
 
@@ -132,6 +139,7 @@ export default function EvidenceBoardPage() {
       audio.sfx('pin'); setTimeout(() => audio.sfx('sting', 0.8), 600)
     } else {
       audio.sfx('deny', 0.7)
+      setDropped({ a, b, key: Date.now() })
     }
     // Every link explains itself: why it holds, or why it doesn't
     setLinkNote({ verdict, text })
@@ -264,6 +272,7 @@ export default function EvidenceBoardPage() {
                 positions={allPositions}
                 pendingFrom={pendingFrom ? { id: pendingFrom, ...allPositions[pendingFrom] } : undefined}
                 pendingTo={pendingTo ?? undefined}
+                dropped={dropped ?? undefined}
               />
 
               {/* 11:13 anchor card */}
@@ -383,7 +392,7 @@ export default function EvidenceBoardPage() {
 
       {/* ── Timeline tab ────────────────────────────────────────────────── */}
       {tab === 'timeline' && (
-        <div className="max-w-3xl mx-auto p-6 space-y-6">
+        <div className="max-w-6xl mx-auto p-6 space-y-6">
           <p className="font-caveat text-parchment-dark text-sm">
             Select an event, then click a slot to place it. Events can be repositioned.
           </p>
@@ -419,24 +428,42 @@ export default function EvidenceBoardPage() {
             ))}
           </div>
 
-          {/* Slots */}
-          <div className="space-y-2">
-            {CASE_001.timeline.map((_, slotIdx) => {
-              const eventId = timelinePlacement[String(slotIdx)]
-              const event = eventId ? CASE_001.timeline.find((e) => e.id === eventId) : undefined
-              return (
-                <div key={slotIdx} onClick={() => handleTimelineDrop(slotIdx)}>
-                  <TimelineSlot
-                    slotIndex={slotIdx}
-                    timeLabel={`Slot ${slotIdx + 1}`}
-                    event={event}
-                    hasConflict={event ? conflictedEventIds.has(event.id) : false}
-                    onDrop={handleTimelineDrop}
-                    onClear={handleTimelineClear}
-                  />
-                </div>
-              )
-            })}
+          {/* Slots: cards pegged along a line, left (earliest) to right (latest) */}
+          <div className="relative overflow-x-auto pb-4">
+            <div className="relative flex gap-4 pt-8 px-2 min-w-max">
+              <svg aria-hidden="true" className="absolute left-0 right-0 top-0 h-10 w-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 10">
+                <path d="M0 3 Q 25 7 50 4 T 100 3" fill="none" stroke="var(--parchment-dark)" strokeWidth="0.35" vectorEffect="non-scaling-stroke" />
+              </svg>
+              {CASE_001.timeline.map((_, slotIdx) => {
+                const eventId = timelinePlacement[String(slotIdx)]
+                const event = eventId ? CASE_001.timeline.find((e) => e.id === eventId) : undefined
+                return (
+                  <motion.div
+                    key={slotIdx}
+                    onClick={() => handleTimelineDrop(slotIdx)}
+                    className="relative w-40 flex-shrink-0 cursor-pointer"
+                    style={{ transformOrigin: 'top center' }}
+                    animate={event ? { rotate: [0, 4, -3, 1.5, slotIdx % 2 ? 1 : -1] } : { rotate: slotIdx % 2 ? 1.5 : -1.5 }}
+                    transition={{ duration: 0.9 }}
+                    whileHover={selectedEvent ? { y: 4 } : undefined}
+                  >
+                    {/* clothes peg */}
+                    <span aria-hidden="true" className="absolute -top-5 left-1/2 -translate-x-1/2 w-3 h-7 rounded-sm" style={{ background: 'linear-gradient(90deg, var(--brown), var(--parchment-dark), var(--brown))', zIndex: 2 }} />
+                    <TimelineSlot
+                      slotIndex={slotIdx}
+                      timeLabel={`Slot ${slotIdx + 1}`}
+                      event={event}
+                      hasConflict={event ? conflictedEventIds.has(event.id) : false}
+                      onDrop={handleTimelineDrop}
+                      onClear={handleTimelineClear}
+                    />
+                  </motion.div>
+                )
+              })}
+            </div>
+            <div className="flex justify-between font-inter text-[10px] tracking-[0.2em] text-parchment-dark mt-2 px-2 min-w-max">
+              <span>EARLIEST</span><span>LATEST</span>
+            </div>
           </div>
         </div>
       )}

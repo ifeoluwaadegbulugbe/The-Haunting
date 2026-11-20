@@ -165,6 +165,8 @@ Concerned, rehearsed, polite. He never confesses. His lies are damaged by eviden
 
 A contradiction becomes **available** when the player holds both sides. It becomes **confirmed** only when the player flags the pair. Confirming a contradiction never requires the AI.
 
+The player can flag a pair in two ways: on the evidence board, or in an interview by **challenging** a witness statement with a piece of evidence. A challenge confirms the contradiction only if the statement and the evidence form a pair in the table above; otherwise the claim holds and nothing changes. (Added with developer approval.)
+
 ---
 
 ## 9.9 Valid evidence links (the board's ground truth)
@@ -251,11 +253,21 @@ The entity may **never**:
 
 EV-X1 is always disprovable through CX-07.
 
+### Incoming calls (added with developer approval)
+
+At three fixed moments the cellar extension rings the investigator. The player answers or lets it ring (20 seconds). Answering lowers attention by 5; letting it ring raises it by 5 and adds a message. A call never changes evidence, facts, unlocks or the score. Each call happens once.
+
+| ID | Rings when | Heard on the line | If left to ring |
+|---|---|---|---|
+| `CALL-1` | EV-01 and EV-07 held | Static and breathing, then the line goes dead | "It rang for a long time." |
+| `CALL-2` | EV-12 held | "…is someone there? It's so cold down here…" | "You heard her voice. You still did not answer." |
+| `CALL-3` | M4 revealed | "…you picked up. No one ever picks up." | "Just like her. Just like everyone." |
+
 ---
 
 ## 9.11 Optional hidden clues (added with developer approval)
 
-Extra clues hidden inside item close-ups. Relevance `optional`: they reward thoroughness (a rating out of 4 and achievements) but are **never** required for progress, are excluded from the progress percentage and do not change the 100-point score. None of them contradicts §9.1.
+Extra clues hidden inside item close-ups. Relevance `optional`: they reward thoroughness (a rating out of 6 and achievements) but are **never** required for progress, are excluded from the progress percentage and do not change the 100-point score. None of them contradicts §9.1.
 
 | ID | Name | Found by | Relates to |
 |---|---|---|---|
@@ -263,3 +275,9 @@ Extra clues hidden inside item close-ups. Relevance `optional`: they reward thor
 | `OC-02` | Scratched Clock Case | Opening the back of the mantel clock (EV-08) | Clara, TL-06 |
 | `OC-03` | Detective's Note | Turning over the third clipping (EV-04) | Julian, Margaret, TL-02 |
 | `OC-04` | Lily's Secret | Turning over Lily's drawing (EV-09) | Lily, Clara, TL-06 |
+| `OC-05` | Lily's Toy Telephone | Lifting the toy telephone in Lily's room | Lily, Clara, Margaret, TL-06 |
+| `OC-06` | Christmas Card | Opening the wardrobe in Lily's room | Julian, Lily, TL-02 |
+
+**Lily's room** is an optional second location, opened once EV-09 is held and explored by torchlight. It holds OC-05, OC-06 and atmosphere only.
+
+**Device puzzles (Digital Archives).** These change how a record is opened, never what it yields or when sections unlock. Each has escalating hints. Clara's laptop needs a password (her diary: "her name, then the day of her concert", so `lily14`). The deleted voicemail (DR-voicemail) is rebuilt by scrubbing the damaged tape. Edmund's photo (DR-photo) is enhanced until the plate of Julian's car reads J4 ASH.

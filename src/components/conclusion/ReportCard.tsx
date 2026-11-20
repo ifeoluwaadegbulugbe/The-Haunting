@@ -1,6 +1,7 @@
 import { ParchmentCard, Button } from '@/components/ui'
 import type { VerdictResult } from '@/lib/scoring'
 import { ACHIEVEMENTS } from '@/data/achievements'
+import { OPTIONAL_TOTAL } from '@/data/achievements'
 
 interface ReportCardProps {
   result:     VerdictResult
@@ -98,7 +99,7 @@ export function ReportCard({ result, narration, thoroughness = 0, achievements =
       <div className="border-t border-brown pt-4 space-y-3">
         <div className="flex justify-between items-baseline">
           <span className="font-inter text-sm text-obsidian font-medium">Hidden details found</span>
-          <span className="font-inter text-sm font-semibold" style={{ color: thoroughness === 4 ? 'var(--verdigris)' : 'var(--brown)' }}>{thoroughness} / 4</span>
+          <span className="font-inter text-sm font-semibold" style={{ color: thoroughness === OPTIONAL_TOTAL ? 'var(--verdigris)' : 'var(--brown)' }}>{thoroughness} / {OPTIONAL_TOTAL}</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {ACHIEVEMENTS.map((a) => {

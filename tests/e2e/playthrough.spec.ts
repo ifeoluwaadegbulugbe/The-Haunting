@@ -62,6 +62,12 @@ async function interrogate(page: Page, id: string, evidence: string[]) {
 test('a player can finish Case 001 and get a full score', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
+  // The 11:13 calls can ring at any point; this investigator always answers
+  let answered = 0
+  await page.addLocatorHandler(page.getByRole('alertdialog', { name: 'Incoming call' }), async () => {
+    await page.getByRole('alertdialog', { name: 'Incoming call' }).getByRole('button', { name: 'Answer' }).click()
+    answered++
+  })
 
   // ── Title and name ──────────────────────────────────────────────────────
   await page.goto('/')
@@ -84,6 +90,22 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
   await page.getByRole('button', { name: 'Hide the next lead' }).click()
   for (const name of SCENE_ORDER) await inspect(page, name)
 
+  // ── Lily's room (optional, by torchlight) ───────────────────────────────
+  await clearOverlays(page)
+  await page.getByRole('link', { name: /Lily.s room/ }).click()
+  await expect(page).toHaveURL(/\/case\/001\/lily-room$/)
+  for (const [spot, gate] of [['Toy Shelf', 'Lift it up'], ['Wardrobe', 'Open the wardrobe']] as const) {
+    await page.locator(`button[aria-pressed][aria-label="${spot}"]`).click()
+    const panel = page.getByRole('dialog', { name: spot })
+    await panel.getByRole('button', { name: gate }).click()
+    await panel.getByRole('button', { name: 'Take it' }).click()
+    await expect(panel.getByText('Logged in your evidence.')).toBeVisible()
+    await panel.getByRole('button', { name: 'Back to the room' }).click()
+  }
+  await expect(page.getByText(/Hidden here: 2 of 2/)).toBeVisible()
+  await page.getByRole('link', { name: 'Back to the study' }).click()
+  await expect(page).toHaveURL(/\/case\/001\/scene$/)
+
   // ── Archive ─────────────────────────────────────────────────────────────
   // Once the study is searched, the next lead points to the archive
   await clearOverlays(page)
@@ -93,6 +115,31 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
   await expect(page).toHaveURL(/\/case\/001\/archive$/)
   for (const tab of ['Telephone Records', "Edmund's Mobile", "Clara's Laptop"]) {
     await page.getByRole('button', { name: tab, exact: true }).click()
+    if (tab === "Edmund's Mobile") {
+      // Enhance the photo: first the car, then its number plate
+      const photo = page.getByRole('button', { name: /Photograph: click a spot/ })
+      const box = (await photo.boundingBox())!
+      await page.mouse.click(box.x + box.width * 0.41, box.y + box.height * 0.75)
+      const zoomed = page.getByRole('button', { name: /Enhanced photograph/ })
+      await expect(zoomed).toBeVisible()
+      const z = (await zoomed.boundingBox())!
+      await page.mouse.click(z.x + z.width * 0.619, z.y + z.height * 0.836)
+      await expect(page.getByText('J4 ASH', { exact: true }).last()).toBeVisible()
+      // Both records on the phone (the photo and the cached profile) can now be logged
+      await expect(page.getByRole('button', { name: 'Log as evidence' })).toHaveCount(2, { timeout: 10_000 })
+    }
+    if (tab === "Clara's Laptop") {
+      // The password is pencilled in Clara's diary; a wrong guess is refused
+      await page.getByLabel('Laptop password').fill('clara')
+      await page.getByRole('button', { name: 'Unlock' }).click()
+      await expect(page.getByText(/Incorrect password/)).toBeVisible()
+      await page.getByLabel('Laptop password').fill('lily14')
+      await page.getByRole('button', { name: 'Unlock' }).click()
+      // The deleted voicemail is rebuilt by scrubbing the damaged tape
+      await page.getByLabel('Scrub the recording').fill('100')
+      await expect(page.getByText('Message restored.')).toBeVisible()
+      await expect(page.getByRole('img', { name: 'RECOVERED' })).toHaveCount(1, { timeout: 10_000 })
+    }
     for (; ;) {
       const btn = page.getByRole('button', { name: /^(Log as evidence|Recover)$/ }).first()
       if (!(await btn.isVisible().catch(() => false))) break
@@ -100,12 +147,33 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
       await clearOverlays(page)
     }
   }
+  // Both deleted laptop records (voicemail and email) are back
+  await expect(page.getByRole('img', { name: 'RECOVERED' })).toHaveCount(2)
   await expect(page.getByRole('link', { name: 'Witnesses' })).not.toHaveAttribute('aria-disabled', 'true')
 
   // ── Witnesses ───────────────────────────────────────────────────────────
   await interrogate(page, 'margaret', ['Digital Photograph', 'Telephone Company Ledger'])
   await interrogate(page, 'dorothea', ["Housekeeper's Logbook", 'Recovered Email'])
   await interrogate(page, 'julian', ["Clara's Diary", 'Digital Photograph', "Julian's Social Profile", 'Final Night Recording'])
+  // Challenge a claim: the Lisbon alibi against the social post proves CX-04; the diary does not
+  await page.getByRole('button', { name: 'Challenge', exact: true }).click()
+  await page.getByRole('button', { name: /^Challenge: I was in Lisbon/ }).click()
+  await page.getByRole('dialog').getByRole('button', { name: /^Clara's Diary/ }).click()
+  await expect(page.getByRole('img', { name: 'IT HOLDS' })).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByPlaceholder(/Ask a question/)).toBeEnabled({ timeout: 20_000 })
+  await clearOverlays(page)
+  await page.getByRole('button', { name: 'Challenge', exact: true }).click()
+  await page.getByRole('button', { name: /^Challenge: I was in Lisbon/ }).click()
+  await page.getByRole('dialog').getByRole('button', { name: /^Julian's Social Profile/ }).click()
+  await expect(page.getByRole('img', { name: /^(CONTRADICTED|ALREADY PROVEN)$/ })).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByPlaceholder(/Ask a question/)).toBeEnabled({ timeout: 20_000 })
+  await clearOverlays(page)
+  // The notebook has written up the case so far
+  await page.getByRole('button', { name: 'Notebook' }).click()
+  const notebook = page.getByRole('dialog', { name: "Investigator's notebook" })
+  await expect(notebook).toContainText('Who is calling at 11:13?')
+  await expect(notebook).toContainText('Ext 2, the cellar line')
+  await notebook.getByRole('button', { name: 'Close the notebook' }).click()
   // Margaret's trusting admission (M6) and a reply after each step must render as text
   await page.goto('/case/001/witnesses/margaret')
   await expect(page.getByText(/kept what I'd seen to myself/)).toBeVisible()
@@ -208,6 +276,8 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
   const save = await page.evaluate(() => localStorage.getItem('haunting-save-v1'))
   expect(save).toContain('"score":100')
 
+  // At least the first 11:13 call rang during the investigation and was answered
+  expect(answered).toBeGreaterThan(0)
   expect(errors, `page errors: ${errors.join(' | ')}`).toEqual([])
 })
 

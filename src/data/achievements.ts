@@ -8,7 +8,10 @@ export interface Achievement {
   earned: (s: GameState) => boolean
 }
 
-const OPTIONAL = ['OC-01', 'OC-02', 'OC-03', 'OC-04']
+/** Every optional hidden detail in the case (OC-*), read from the case data */
+export const OPTIONAL = CASE_001.evidence.filter((e) => e.relevance === 'optional').map((e) => e.id)
+export const OPTIONAL_TOTAL = OPTIONAL.length
+const CALL_IDS = ['CALL-1', 'CALL-2', 'CALL-3']
 const has = (s: GameState, id: string) => Boolean(s.collectedEvidence[id])
 
 export const ACHIEVEMENTS: Achievement[] = [
@@ -27,7 +30,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'sharp-eye',
     title: 'Sharp Eye',
-    description: 'Find all four hidden details.',
+    description: 'Find every hidden detail.',
     earned: (s) => OPTIONAL.every((id) => has(s, id)),
   },
   {
@@ -65,6 +68,18 @@ export const ACHIEVEMENTS: Achievement[] = [
     title: 'Clockwork',
     description: 'Reconstruct the final night in the right order.',
     earned: (s) => (s.verdict?.breakdown.timeline ?? 0) === 20,
+  },
+  {
+    id: 'answered',
+    title: 'Someone Answered',
+    description: 'Pick up every 11:13 call.',
+    earned: (s) => CALL_IDS.every((id) => s.calls?.[id] === 'answered'),
+  },
+  {
+    id: 'nursery',
+    title: 'By Torchlight',
+    description: 'Search Lily\u2019s room.',
+    earned: (s) => has(s, 'OC-05') && has(s, 'OC-06'),
   },
   {
     id: 'master',

@@ -22,6 +22,8 @@ src/
       archive/page.tsx                    # Digital Archives
       witnesses/[id]/page.tsx             # Witness Interrogation
       evidence/page.tsx                   # Evidence Board
+      lily-room/page.tsx                  # Lily's room (optional, by torchlight)
+      lily-room/page.tsx                  # Lily's room (optional, by torchlight)
       conclusion/page.tsx                 # Case Conclusion
     api/
       witness/route.ts

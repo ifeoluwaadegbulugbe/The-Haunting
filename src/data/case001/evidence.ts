@@ -319,6 +319,37 @@ export const EVIDENCE_ITEMS: Evidence[] = [
     relatedCharacters: ['lily', 'clara'],
     relatedEvents: ['TL-06'],
   },
+  // Found by torchlight in Lily's bedroom (optional, like the four above)
+  {
+    id: 'OC-05',
+    name: 'Lily\u2019s Toy Telephone',
+    description:
+      'A red toy telephone. Taped under it, in Clara\u2019s hand: "If Mummy can\u2019t come, lift the ' +
+      'real one downstairs and ring Mrs Hale. She is the nearest."',
+    kind: 'physical',
+    source: 'Lily\u2019s room',
+    location: 'Lily\u2019s bedroom, on the toy shelf',
+    reliability: 'medium',
+    authenticity: 'genuine',
+    relevance: 'optional',
+    relatedCharacters: ['lily', 'clara', 'margaret'],
+    relatedEvents: ['TL-06'],
+  },
+  {
+    id: 'OC-06',
+    name: 'Christmas Card',
+    description:
+      'Hidden at the back of the wardrobe, a Christmas card from 2007: "To my favourite girl. ' +
+      'Be good, and keep our little secrets. Uncle J."',
+    kind: 'document',
+    source: 'Lily\u2019s room',
+    location: 'Lily\u2019s bedroom, at the back of the wardrobe',
+    reliability: 'medium',
+    authenticity: 'genuine',
+    relevance: 'optional',
+    relatedCharacters: ['julian', 'lily'],
+    relatedEvents: ['TL-02'],
+  },
 ]
 
 // Validate at import time

@@ -36,7 +36,7 @@ describe('optional hidden clues', () => {
   const optional = CASE_001.evidence.filter((e) => e.relevance === 'optional')
 
   it('there are exactly four, OC-01 to OC-04', () => {
-    expect(optional.map((e) => e.id).sort()).toEqual(['OC-01', 'OC-02', 'OC-03', 'OC-04'])
+    expect(optional.map((e) => e.id).sort()).toEqual(['OC-01', 'OC-02', 'OC-03', 'OC-04', 'OC-05', 'OC-06'])
   })
 
   it('never change the progress percentage', () => {

@@ -256,6 +256,10 @@ export const GameStateSchema = z.object({
   audio: AudioSettingsSchema,
   seenCinematics: z.array(z.string()),
   achievements: z.array(z.string()),
+  // Device puzzles solved in the Digital Archives (presentation gates only; never change unlock rules)
+  deviceUnlocks: z.array(z.string()).default([]),
+  // The 11:13 calls the player answered or let ring
+  calls: z.record(z.enum(['answered', 'ignored'])).default({}),
   investigator: z.object({
     name: z.string(),
     startedAt: z.number(),

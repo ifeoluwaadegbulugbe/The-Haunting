@@ -10,6 +10,8 @@ interface EvidencePickerProps {
   allEvidence: Evidence[]
   onSelect: (evidence: Evidence) => void
   onClose: () => void
+  /** Heading for the picker (defaults to Present Evidence) */
+  title?: string
 }
 
 const KIND_ICONS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
@@ -30,13 +32,14 @@ export function EvidencePicker({
   allEvidence,
   onSelect,
   onClose,
+  title = 'Present Evidence',
 }: EvidencePickerProps) {
   const collected = collectedIds
     .map((id) => allEvidence.find((e) => e.id === id))
     .filter(Boolean) as Evidence[]
 
   return (
-    <Modal open={open} onClose={onClose} title="Present Evidence">
+    <Modal open={open} onClose={onClose} title={title}>
       <div className="space-y-1 max-h-72 overflow-y-auto min-w-64">
         {collected.length === 0 ? (
           <p className="font-caveat text-parchment-dark text-sm italic py-2">

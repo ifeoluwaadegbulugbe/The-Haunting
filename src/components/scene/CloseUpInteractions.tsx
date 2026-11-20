@@ -33,7 +33,7 @@ type GateKind = 'doors' | 'cover' | 'lift' | 'back'
 const wood = 'linear-gradient(135deg, var(--brown) 0%, rgba(66,29,41,0.95) 55%, var(--brown) 100%)'
 const leather = 'linear-gradient(160deg, rgba(81,65,61,1) 0%, rgba(66,29,41,1) 100%)'
 
-function Gate({
+export function Gate({
   kind, label, sound, children, cover,
 }: { kind: GateKind; label: string; sound: SfxName; children: ReactNode; cover?: ReactNode }) {
   const [open, setOpen] = useState(false)

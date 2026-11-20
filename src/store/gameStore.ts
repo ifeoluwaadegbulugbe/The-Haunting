@@ -11,6 +11,8 @@ export const INITIAL_STATE: GameState = {
   audio: { ...DEFAULT_AUDIO },
   seenCinematics: [],
   achievements: [],
+  deviceUnlocks: [],
+  calls: {},
   investigator: { name: '', startedAt: 0 },
   discoveredObjects: [],
   inspectedObjects: [],
@@ -53,6 +55,10 @@ interface GameStore extends GameState {
 
   // Digital Archives
   recoverRecord: (id: string) => void
+  unlockDevice: (id: string) => void
+
+  // The 11:13 calls
+  resolveCall: (id: string, outcome: 'answered' | 'ignored') => void
 
   // Witness
   addChatTurn: (witnessId: string, turn: { role: 'player' | 'witness'; text: string; at: number }) => void
@@ -136,6 +142,13 @@ export const useGameStore = create<GameStore>()(
             : { recoveredRecords: [...s.recoveredRecords, id] }
         ),
 
+      unlockDevice: (id) =>
+        set((s) => ((s.deviceUnlocks ?? []).includes(id) ? {} : { deviceUnlocks: [...(s.deviceUnlocks ?? []), id] })),
+
+      // Each call is resolved once; the first outcome stands
+      resolveCall: (id, outcome) =>
+        set((s) => (s.calls?.[id] ? {} : { calls: { ...(s.calls ?? {}), [id]: outcome } })),
+
       // ── Witness ───────────────────────────────────────────────────────
       addChatTurn: (witnessId, turn) =>
         set((s) => ({
@@ -165,11 +178,11 @@ export const useGameStore = create<GameStore>()(
           (s.presentedEvidence[witnessId] ?? []).includes(evidenceId)
             ? {}
             : {
-                presentedEvidence: {
-                  ...s.presentedEvidence,
-                  [witnessId]: [...(s.presentedEvidence[witnessId] ?? []), evidenceId],
-                },
-              }
+              presentedEvidence: {
+                ...s.presentedEvidence,
+                [witnessId]: [...(s.presentedEvidence[witnessId] ?? []), evidenceId],
+              },
+            }
         ),
 
       // ── Board ─────────────────────────────────────────────────────────
@@ -231,15 +244,15 @@ export const useGameStore = create<GameStore>()(
           s.entity.lockedObjects.includes(id)
             ? {}
             : {
-                entity: {
-                  ...s.entity,
-                  lockedObjects: [...s.entity.lockedObjects, id],
-                  locks: {
-                    ...(s.entity.locks ?? {}),
-                    [id]: { until: Date.now() + durationMs, atInspected: s.inspectedObjects.length },
-                  },
+              entity: {
+                ...s.entity,
+                lockedObjects: [...s.entity.lockedObjects, id],
+                locks: {
+                  ...(s.entity.locks ?? {}),
+                  [id]: { until: Date.now() + durationMs, atInspected: s.inspectedObjects.length },
                 },
-              }
+              },
+            }
         ),
 
       unlockObject: (id) =>

@@ -42,3 +42,16 @@ function getRevealedStatementIds(state: GameState, caseData: Case001): string[] 
   }
   return ids
 }
+
+/**
+ * A witness statement challenged with a piece of evidence: the contradiction it proves,
+ * if the pair is in the table (§9.8). Undefined means the claim holds.
+ */
+export function contradictionForChallenge(
+  statementId: string | undefined,
+  evidenceId: string,
+  rules: ContradictionRule[]
+): ContradictionRule | undefined {
+  if (!statementId) return undefined
+  return rules.find((c) => (c.a === statementId && c.b === evidenceId) || (c.b === statementId && c.a === evidenceId))
+}

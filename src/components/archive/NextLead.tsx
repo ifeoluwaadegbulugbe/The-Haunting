@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Compass, X } from 'lucide-react'
+import { Compass, X, NotebookPen } from 'lucide-react'
+import { Notebook } from './Notebook'
 import { Button } from '@/components/ui'
 import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
@@ -30,6 +31,7 @@ export function NextLead() {
   const [dismissed, setDismissed] = useState<string | null>(null)
   // Opened by hand while folded (on the board, or in the section the lead points to)
   const [openHere, setOpenHere] = useState(false)
+  const [notebookOpen, setNotebookOpen] = useState(false)
   useEffect(() => setOpenHere(false), [pathname])
 
   useEffect(() => {
@@ -66,7 +68,8 @@ export function NextLead() {
   const go = () => { audio.sfx('click'); router.push(step.href) }
 
   return (
-    <div className={onBoard ? 'fixed right-4' : 'fixed left-4'} style={{ top: onBoard ? 62 : 64, zIndex: 12 }}>
+    <>
+    <div className={`fixed flex items-start gap-2 ${onBoard ? 'right-4 flex-row-reverse' : 'left-4'}`} style={{ top: onBoard ? 62 : 64, zIndex: 12 }}>
       <AnimatePresence mode="wait" initial>
         {collapsed ? (
           <motion.button
@@ -106,6 +109,16 @@ export function NextLead() {
           </motion.div>
         )}
       </AnimatePresence>
+      <button
+        onClick={() => setNotebookOpen(true)}
+        className="flex items-center gap-2 px-3 py-1.5 rounded border border-gold font-inter text-sm text-parchment hover:border-parchment-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+        style={{ background: 'rgba(14,12,16,0.85)' }}
+      >
+        <NotebookPen size={14} color="var(--gold)" aria-hidden="true" /> Notebook
+      </button>
     </div>
+    {/* Outside the bar so it is not trapped under the bar's stacking order */}
+    <Notebook open={notebookOpen} onClose={() => setNotebookOpen(false)} />
+    </>
   )
 }

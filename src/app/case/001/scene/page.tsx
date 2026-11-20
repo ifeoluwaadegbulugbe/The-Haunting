@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, DoorOpen } from 'lucide-react'
 import { Hotspot } from '@/components/scene/Hotspot'
 import { ObjectPanel } from '@/components/scene/ObjectPanel'
 import { EvidenceTray } from '@/components/scene/EvidenceTray'
@@ -15,6 +15,7 @@ import { useGameStore } from '@/store/gameStore'
 import { evaluateCondition, conditionMessage } from '@/lib/engine/conditions'
 import { evaluateEntityRules, dispatchEntityActions } from '@/lib/entity'
 import { playSound } from '@/lib/audio'
+import { audio } from '@/lib/audio/engine'
 import { CASE_001 } from '@/data/case001'
 import type { SceneObject } from '@/types'
 import type { HotspotState } from '@/components/scene/Hotspot'
@@ -243,6 +244,17 @@ export default function ScenePage() {
         <span className="font-cinzel text-xs tracking-widest text-parchment-dark uppercase">
           Explore the Scene
         </span>
+        {/* Lily's things lead upstairs to her room (optional, explored by torchlight) */}
+        {collectedEvidence['EV-09'] && !selectedObject && (
+          <Link
+            href="/case/001/lily-room"
+            onClick={() => audio.sfx('drawer', 0.6)}
+            className="flex items-center gap-2 font-inter text-xs px-3 py-1.5 rounded border border-gold text-parchment hover:border-parchment-light"
+            style={{ background: 'rgba(14,12,16,0.75)' }}
+          >
+            <DoorOpen size={14} color="var(--gold)" aria-hidden="true" /> Go upstairs: Lily&rsquo;s room
+          </Link>
+        )}
         <button
           onClick={() => setSelectedObject(null)}
           aria-label="Close panel"

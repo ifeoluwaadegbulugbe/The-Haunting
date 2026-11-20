@@ -7,6 +7,7 @@ import { ParchmentCard } from '@/components/ui'
 import { TopBar } from '@/components/archive/TopBar'
 import { DeviceFrame } from '@/components/digital/DeviceFrame'
 import { RecordWrapper } from '@/components/digital/RecordWrapper'
+import { LaptopLock, VoicemailRestore, PhotoEnhance } from '@/components/digital/DevicePuzzles'
 import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { selectUnlockedSections, selectProgress, selectRank } from '@/store/selectors'
@@ -35,7 +36,11 @@ export default function ArchivePage() {
     recoverRecord,
     collectEvidence,
     addAttention,
+    unlockDevice,
   } = state
+  const deviceUnlocks = state.deviceUnlocks ?? []
+  // Saves from before the lock screen existed may already hold laptop evidence
+  const laptopOpen = deviceUnlocks.includes('laptop') || Boolean(collectedEvidence['EV-12'] || collectedEvidence['EV-13'])
 
   const [activeTab, setActiveTab] = useState<DeviceTab>('telco')
 
@@ -149,25 +154,39 @@ export default function ArchivePage() {
 
         {/* Device frame + records */}
         <DeviceFrame device={activeTab} className="max-w-lg mx-auto">
-          <div className="space-y-4">
-            {deviceRecords[activeTab].map((record) => {
-              const isRecovered = recoveredRecords.includes(record.id)
-              const conditionMet = record.recoveryCondition
-                ? evaluateCondition(record.recoveryCondition, state)
-                : true
+          {activeTab === 'laptop' && !laptopOpen ? (
+            <LaptopLock onUnlock={() => unlockDevice('laptop')} />
+          ) : (
+            <div className="space-y-4">
+              {deviceRecords[activeTab].map((record) => {
+                const isRecovered = recoveredRecords.includes(record.id)
+                const conditionMet = record.recoveryCondition
+                  ? evaluateCondition(record.recoveryCondition, state)
+                  : true
+                const isCollected = Boolean(record.yieldsEvidence && collectedEvidence[record.yieldsEvidence])
 
-              return (
-                <RecordWrapper
-                  key={record.id}
-                  record={record}
-                  isRecovered={isRecovered}
-                  conditionMet={conditionMet}
-                  isCollected={Boolean(record.yieldsEvidence && collectedEvidence[record.yieldsEvidence])}
-                  onRecover={() => handleRecover(record)}
-                />
-              )
-            })}
-          </div>
+                // Damaged audio is rebuilt by scrubbing the tape
+                if (record.id === 'DR-voicemail' && !isRecovered && conditionMet) {
+                  return <VoicemailRestore key={record.id} record={record} onRestored={() => handleRecover(record)} />
+                }
+                // The photo is enhanced until the car can be identified, then logged
+                if (record.id === 'DR-photo' && !isCollected && !deviceUnlocks.includes('photo-enhanced')) {
+                  return <PhotoEnhance key={record.id} record={record} onEnhanced={() => unlockDevice('photo-enhanced')} />
+                }
+
+                return (
+                  <RecordWrapper
+                    key={record.id}
+                    record={record}
+                    isRecovered={isRecovered}
+                    conditionMet={conditionMet}
+                    isCollected={Boolean(record.yieldsEvidence && collectedEvidence[record.yieldsEvidence])}
+                    onRecover={() => handleRecover(record)}
+                  />
+                )
+              })}
+            </div>
+          )}
         </DeviceFrame>
       </main>
     </div>
