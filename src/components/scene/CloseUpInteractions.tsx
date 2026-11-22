@@ -12,17 +12,29 @@ import { useAsset } from '@/lib/useAsset'
 import type { Evidence, SceneObject } from '@/types'
 
 function Hero({ src, alt }: { src: string; alt: string }) {
-  return (
+  // Cut-out objects (.png) cast a shadow that follows their shape and sit in a pool of
+  // candlelight; full photographs keep a framed shadow
+  const cutout = src.endsWith('.png')
+  const img = (
     <motion.img
       src={src}
       alt={alt}
       draggable={false}
-      initial={{ opacity: 0, scale: 1.04 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0, scale: 1.04, y: cutout ? -10 : 0 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.8 }}
-      className="block mx-auto max-h-[46dvh] max-w-full rounded-sm object-contain"
-      style={{ boxShadow: '0 14px 40px rgba(14,12,16,0.7)' }}
+      className={`relative block mx-auto max-h-[46dvh] max-w-full object-contain ${cutout ? '' : 'rounded-sm'}`}
+      style={cutout
+        ? { filter: 'drop-shadow(0 22px 18px rgba(14,12,16,0.85)) drop-shadow(0 0 30px rgba(232,177,93,0.12))' }
+        : { boxShadow: '0 14px 40px rgba(14,12,16,0.7)' }}
     />
+  )
+  if (!cutout) return img
+  return (
+    <div className="relative">
+      <div aria-hidden="true" className="absolute inset-x-[10%] top-[8%] bottom-[-6%] pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 60%, rgba(232,177,93,0.16), transparent 65%)' }} />
+      {img}
+    </div>
   )
 }
 
@@ -284,7 +296,7 @@ function TapePlayer({ photo }: { photo: boolean }) {
 
   return (
     <div className="flex flex-col items-center gap-4 w-full max-w-lg mx-auto">
-      {photo ? <Hero src="/assets/evidence/recorder.jpg" alt="The study cassette recorder" /> : (
+      {photo ? <Hero src="/assets/evidence/recorder.png" alt="The study cassette recorder" /> : (
         <svg viewBox="0 0 240 140" className="w-56" role="img" aria-label="Cassette tape labelled Study, 11.11.08">
           <rect x="4" y="4" width="232" height="132" rx="10" fill="var(--ink)" stroke="var(--gold)" strokeWidth="2" />
           <rect x="24" y="18" width="192" height="46" rx="3" fill="var(--parchment-light)" />
@@ -356,11 +368,11 @@ interface ObjectCloseUpProps {
 }
 
 export function ObjectCloseUp({ object, evidence, found, onFind }: ObjectCloseUpProps) {
-  const phonePhoto = useAsset('/assets/evidence/telephone.jpg')
-  const recorderPhoto = useAsset('/assets/evidence/recorder.jpg')
-  const clockPhoto = useAsset('/assets/evidence/clock.jpg')
+  const phonePhoto = useAsset('/assets/evidence/telephone.png')
+  const recorderPhoto = useAsset('/assets/evidence/recorder.png')
+  const clockPhoto = useAsset('/assets/evidence/clock.png')
   const cabinetPhoto = useAsset('/assets/evidence/cabinet.jpg')
-  const diaryPhoto = useAsset('/assets/evidence/diary.jpg')
+  const diaryPhoto = useAsset('/assets/evidence/diary.png')
   const rugPhoto = useAsset('/assets/evidence/rug-notice.jpg')
   const ev = (id: string) => evidence.find((e) => e.id === id)
   const centre = () => ({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
@@ -374,7 +386,7 @@ export function ObjectCloseUp({ object, evidence, found, onFind }: ObjectCloseUp
           transition={{ duration: 0.9, ease: 'easeOut' }}
           onAnimationComplete={() => audio.sfx('pickup', 0.8)}
         >
-          {phonePhoto ? <Hero src="/assets/evidence/telephone.jpg" alt="Rotary telephone labelled Ext 2, Cellar" /> : <EvidenceVisual evidenceId="EV-01" name="Rotary Telephone" />}
+          {phonePhoto ? <Hero src="/assets/evidence/telephone.png" alt="Rotary telephone labelled Ext 2, Cellar" /> : <EvidenceVisual evidenceId="EV-01" name="Rotary Telephone" />}
         </motion.div>
       )
 
@@ -395,7 +407,7 @@ export function ObjectCloseUp({ object, evidence, found, onFind }: ObjectCloseUp
     case 'OBJ-diary':
       return (
         <Gate kind="cover" label="Open the diary" sound="page" cover={<span className="font-cormorant italic text-parchment-dark text-xl">C. A. — 2008</span>}>
-          {diaryPhoto && <div className="mb-4"><Hero src="/assets/evidence/diary.jpg" alt="Clara's open diary with a key taped inside" /></div>}
+          {diaryPhoto && <div className="mb-4"><Hero src="/assets/evidence/diary.png" alt="Clara's open diary with a key taped inside" /></div>}
           <EvidenceVisual evidenceId="EV-03" name="Clara's Diary" />
         </Gate>
       )
@@ -420,7 +432,7 @@ export function ObjectCloseUp({ object, evidence, found, onFind }: ObjectCloseUp
     case 'OBJ-clock':
       return (
         <div className="flex flex-col items-center gap-5">
-          {clockPhoto ? <Hero src="/assets/evidence/clock.jpg" alt="Mantel clock stopped at 11:13" /> : <ClockFace />}
+          {clockPhoto ? <Hero src="/assets/evidence/clock.png" alt="Mantel clock stopped at 11:13" /> : <ClockFace />}
           <Gate kind="back" label="Open the back of the clock" sound="drawer" cover={<span className="font-cinzel text-xs tracking-[0.3em] text-parchment-dark">REAR PANEL</span>}>
             <div className="space-y-5">
               <button

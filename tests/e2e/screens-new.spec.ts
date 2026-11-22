@@ -8,12 +8,14 @@ test('new screens', async ({ page }) => {
   const ev = ['EV-01', 'EV-02', 'EV-03', 'EV-04', 'EV-05', 'EV-06', 'EV-07', 'EV-08', 'EV-09', 'EV-10', 'EV-11', 'EV-14', 'EV-15']
   await page.evaluate((ids) => {
     const collectedEvidence = Object.fromEntries(ids.map((id, i) => [id, { at: i + 1, flags: [] }]))
-    localStorage.setItem('haunting-save-v1', JSON.stringify({ state: {
-      version: 2, investigator: { name: 'Ada', startedAt: 1 }, collectedEvidence, seenCinematics: ['assignment'],
-      revealedFacts: ['J1', 'J2', 'J3', 'M1', 'M2'], calls: { 'CALL-1': 'answered' },
-      links: [{ a: 'EV-01', b: 'EV-11', verdict: 'valid' }, { a: 'EV-02', b: 'EV-05', verdict: 'valid' }],
-      timelinePlacement: { '0': 'TL-01', '1': 'TL-02' },
-    }, version: 0 }))
+    localStorage.setItem('haunting-save-v1', JSON.stringify({
+      state: {
+        version: 2, investigator: { name: 'Ada', startedAt: 1 }, collectedEvidence, seenCinematics: ['assignment'],
+        revealedFacts: ['J1', 'J2', 'J3', 'M1', 'M2'], calls: { 'CALL-1': 'answered' },
+        links: [{ a: 'EV-01', b: 'EV-11', verdict: 'valid' }, { a: 'EV-02', b: 'EV-05', verdict: 'valid' }],
+        timelinePlacement: { '0': 'TL-01', '1': 'TL-02' },
+      }, version: 0
+    }))
   }, ev)
 
   await page.goto('/case/001/lily-room')
@@ -21,10 +23,22 @@ test('new screens', async ({ page }) => {
   await page.mouse.move(700, 420)
   await page.waitForTimeout(400)
   await shot(page, '20-lily-room')
+  await page.getByRole('button', { name: 'Light the lamp' }).click()
+  await page.waitForTimeout(1000)
+  await shot(page, '28-lily-lit')
+  await page.getByRole('button', { name: 'Put out the lamp' }).click()
   await page.locator('button[aria-pressed][aria-label="Wardrobe"]').click()
   await page.getByRole('button', { name: 'Open the wardrobe' }).click()
   await page.waitForTimeout(1600)
   await shot(page, '21-lily-wardrobe')
+
+  // A cut-out object in its close-up
+  await page.goto('/case/001/scene')
+  await page.waitForTimeout(1500)
+  await page.locator('button[aria-pressed][aria-label="Rotary Telephone"]').click()
+  await page.getByRole('button', { name: 'Examine', exact: true }).click()
+  await page.waitForTimeout(2200)
+  await shot(page, '29-telephone-cutout')
 
   await page.goto('/case/001/archive')
   await page.getByRole('button', { name: "Clara's Laptop", exact: true }).click()

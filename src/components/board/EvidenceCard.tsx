@@ -107,11 +107,11 @@ export function EvidenceCard({
 
 // Close-up photographs the player has already seen, reused as card pictures
 const PHOTO_FOR: Record<string, string> = {
-  'EV-01': '/assets/evidence/telephone.jpg',
-  'EV-03': '/assets/evidence/diary.jpg',
+  'EV-01': '/assets/evidence/telephone.png',
+  'EV-03': '/assets/evidence/diary.png',
   'EV-06': '/assets/evidence/cabinet.jpg',
-  'EV-07': '/assets/evidence/recorder.jpg',
-  'EV-08': '/assets/evidence/clock.jpg',
+  'EV-07': '/assets/evidence/recorder.png',
+  'EV-08': '/assets/evidence/clock.png',
   'EV-10': '/assets/evidence/rug-notice.jpg',
 }
 
@@ -119,8 +119,17 @@ const PHOTO_FOR: Record<string, string> = {
 function CardThumb({ evidence }: { evidence: Evidence }) {
   const src = evidence.assetPath ?? PHOTO_FOR[evidence.id]
   if (src) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={evidence.name} draggable={false} className="w-full h-full object-cover pointer-events-none" />
+    const cutout = src.endsWith('.png')
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={evidence.name}
+        draggable={false}
+        className={`w-full h-full pointer-events-none ${cutout ? 'object-contain p-1' : 'object-cover'}`}
+        style={cutout ? { filter: 'drop-shadow(0 4px 4px rgba(14,12,16,0.7))' } : undefined}
+      />
+    )
   }
   const k = evidence.kind
   return (

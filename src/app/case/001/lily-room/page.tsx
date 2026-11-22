@@ -95,10 +95,10 @@ export default function LilyRoomPage() {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-ink">
-      {/* The room, cover-sized at 16:9 so hotspots stay on their objects */}
+      {/* The room, cover-sized at the picture's own shape so hotspots stay on their objects */}
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ width: 'max(100vw, 177.78dvh)', height: 'max(100dvh, 56.25vw)' }}
+        style={{ width: 'max(100vw, 183.33dvh)', height: 'max(100dvh, 54.55vw)' }}
       >
         {art ? <img src={ROOM_ART} alt="Lily's bedroom" className="w-full h-full object-cover" draggable={false} /> : <LilyRoomDrawing />}
         {LILY_ROOM_OBJECTS.map((o) => (
