@@ -12,6 +12,7 @@ import { ChatBubble } from '@/components/witness/ChatBubble'
 import { TypingDots } from '@/components/witness/TypingDots'
 import { EvidencePicker } from '@/components/witness/EvidencePicker'
 import { EntityOverlay } from '@/components/entity/EntityOverlay'
+import { Sighting } from '@/components/entity/Sighting'
 import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { selectUnlockedSections, selectProgress, selectRank } from '@/store/selectors'
@@ -280,6 +281,15 @@ export default function WitnessPage() {
         <div className="absolute glow-flicker rounded-full" style={{ left: '28%', top: '18%', width: '38vw', aspectRatio: '1', transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle, rgba(232,177,93,0.22), transparent 60%)', mixBlendMode: 'screen' }} />
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(14,12,16,0.85) 100%)' }} />
       </div>
+
+      {/* The entity can be seen in the doorway: a layer the same shape as the room picture */}
+      {roomArt && (
+        <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: 'max(100vw, 179.17dvh)', height: 'max(100dvh, 55.81vw)' }}>
+            <Sighting spot="interview" />
+          </div>
+        </div>
+      )}
 
       <main ref={shakeScope} className="relative max-w-5xl mx-auto px-4 py-6 flex flex-col gap-4" style={{ zIndex: 1 }}>
         <div className="flex items-center justify-between">

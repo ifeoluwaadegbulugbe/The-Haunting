@@ -3,6 +3,7 @@
  * Witnesses run in scripted mode (AI_MOCK=1), so it is deterministic.
  */
 import { test, expect, type Page } from '@playwright/test'
+import { handleInterruptions } from './helpers'
 
 const SCENE_ORDER = [
   'Rotary Telephone', 'Torn Family Photograph', "Clara's Diary", 'Newspaper Clippings',
@@ -60,14 +61,12 @@ async function interrogate(page: Page, id: string, evidence: string[]) {
 }
 
 test('a player can finish Case 001 and get a full score', async ({ page }) => {
+  // The whole case, including searches, the lab and the confrontation
+  test.setTimeout(420_000)
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
-  // The 11:13 calls can ring at any point; this investigator always answers
-  let answered = 0
-  await page.addLocatorHandler(page.getByRole('alertdialog', { name: 'Incoming call' }), async () => {
-    await page.getByRole('alertdialog', { name: 'Incoming call' }).getByRole('button', { name: 'Answer' }).click()
-    answered++
-  })
+  // Calls, chapter endings and memories can interrupt at any point; this investigator answers them
+  const seen = await handleInterruptions(page)
 
   // ── Title and name ──────────────────────────────────────────────────────
   await page.goto('/')
@@ -89,6 +88,18 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
   await expect(page.getByRole('status', { name: 'Next lead' })).toContainText('Still to search')
   await page.getByRole('button', { name: 'Hide the next lead' }).click()
   for (const name of SCENE_ORDER) await inspect(page, name)
+
+  // ── A timed search of the study earns stars ─────────────────────────────
+  await clearOverlays(page)
+  await page.getByRole('link', { name: 'Search the study' }).click()
+  await page.getByRole('button', { name: 'Play Search' }).click()
+  for (let i = 0; i < 8; i++) await page.getByRole('button', { name: /^Find: / }).first().click()
+  const results = page.getByRole('dialog', { name: 'Search results' })
+  await expect(results.getByText('Search complete')).toBeVisible()
+  await expect(results.getByLabel(/[1-5] of 5 stars/)).toBeVisible()
+  await expect(results.getByRole('button', { name: 'Play By Candlelight' })).toBeEnabled()
+  await results.getByRole('link', { name: 'Back to the room' }).click()
+  await expect(page).toHaveURL(/\/case\/001\/scene$/)
 
   // ── Lily's room (optional, by torchlight) ───────────────────────────────
   await clearOverlays(page)
@@ -150,6 +161,32 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
   // Both deleted laptop records (voicemail and email) are back
   await expect(page.getByRole('img', { name: 'RECOVERED' })).toHaveCount(2)
   await expect(page.getByRole('link', { name: 'Witnesses' })).not.toHaveAttribute('aria-disabled', 'true')
+
+  // ── Forensics lab: bench work, a lab wait skipped with a star, the profile ─
+  await page.getByRole('link', { name: 'Lab', exact: true }).click()
+  await expect(page).toHaveURL(/\/case\/001\/lab$/)
+  const task = (name: string) => page.getByRole('listitem').filter({ has: page.getByRole('heading', { name }) })
+  await task('Rebuild the Torn Photograph').getByRole('button', { name: 'Start' }).click()
+  for (let p = 0; p < 6; p++) {
+    const tile = page.getByRole('button', { name: /^Piece \d/ }).nth(p)
+    if ((await tile.getAttribute('aria-label')) === `Piece ${p + 1}`) continue
+    await tile.click()
+    await page.getByRole('button', { name: `Piece ${p + 1}`, exact: true }).click()
+  }
+  await expect(page.getByRole('dialog', { name: 'Lab report' })).toContainText('signet ring', { timeout: 10_000 })
+  await page.getByRole('button', { name: 'File it' }).click()
+  await task('Pencil Rubbing of the Diary').getByRole('button', { name: 'Start' }).click()
+  const page2 = page.getByRole('button', { name: /^Rub the pencil/ })
+  await page2.focus()
+  for (let i = 0; i < 5; i++) await page2.press('Enter')
+  await expect(page.getByRole('dialog', { name: 'Lab report' })).toContainText('cellar telephone', { timeout: 10_000 })
+  await page.getByRole('button', { name: 'File it' }).click()
+  await task('Run the Number Plate').getByRole('button', { name: 'Send to the lab' }).click()
+  await task('Run the Number Plate').getByRole('button', { name: /Speed up/ }).click()
+  await task('Run the Number Plate').getByRole('button', { name: 'Read the report' }).click()
+  await expect(page.getByRole('dialog', { name: 'Lab report' })).toContainText('J4 ASH')
+  await page.getByRole('button', { name: 'File it' }).click()
+  await expect(page.getByRole('complementary', { name: 'Killer profile' })).toContainText('Drives a green Mercedes, J4 ASH')
 
   // ── Witnesses ───────────────────────────────────────────────────────────
   await interrogate(page, 'margaret', ['Digital Photograph', 'Telephone Company Ledger'])
@@ -253,12 +290,29 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
   // ── Conclusion ──────────────────────────────────────────────────────────
   await expect(page).toHaveURL(/\/case\/001\/conclusion$/)
   await page.getByRole('button', { name: 'Reveal the Truth' }).click()
+  // The confrontation: answer each point of Julian's defence (one wrong answer first)
+  const court = page.getByRole('list', { name: 'Your evidence' })
+  await court.getByRole('button', { name: "Clara's Diary" }).click()
+  await expect(page.getByRole('img', { name: 'OVERRULED' })).toBeVisible()
+  await page.getByRole('button', { name: 'Try again' }).click()
+  for (const ev of ['Digital Photograph', 'Final Night Recording', 'Unsigned Will Amendment', 'Recovered Email', 'Telephone Company Ledger']) {
+    await court.getByRole('button', { name: ev, exact: true }).click()
+    await expect(page.getByRole('img', { name: 'OBJECTION SUSTAINED' })).toBeVisible()
+    await page.getByRole('button', { name: 'Press on' }).click()
+  }
+  await expect(page.getByRole('img', { name: 'GUILTY' })).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByText(/Convincing \(1 wrong answer\)/)).toBeVisible()
+  await page.getByRole('button', { name: 'Leave the court' }).click()
   await page.getByRole('button', { name: 'Answer' }).click({ timeout: 30_000 })
   // The reveal walks back through the night, the witnesses and the entity
   await page.getByRole('button', { name: 'Continue' }).click({ timeout: 60_000 })
   await expect(page.getByText('THE WITNESSES, RECONSIDERED')).toBeVisible()
   await page.getByRole('button', { name: 'Continue' }).click({ timeout: 30_000 })
   await page.getByRole('button', { name: 'Go down to the cellar' }).click({ timeout: 30_000 })
+  // The cellar extension rings one last time; how it ends depends on the calls answered
+  await page.getByRole('button', { name: 'Answer the cellar phone' }).click({ timeout: 15_000 })
+  await expect(page.getByText(seen.calls >= 2 ? /Thank you for answering/ : /That will have to be enough/)).toBeVisible({ timeout: 10_000 })
+  await page.getByRole('button', { name: 'Leave the cellar' }).click()
   const report = page.locator('main', { hasText: 'Case 001 — Closed' })
   await expect(report).toBeVisible({ timeout: 30_000 })
   // The rank line; the achievement chip of the same name is also on the card
@@ -277,7 +331,10 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
   expect(save).toContain('"score":100')
 
   // At least the first 11:13 call rang during the investigation and was answered
-  expect(answered).toBeGreaterThan(0)
+  expect(seen.calls).toBeGreaterThan(0)
+  // Every chapter ended with its cliffhanger
+  expect(seen.chapters).toBeGreaterThanOrEqual(3)
+  for (const ch of ['chapter-1', 'chapter-2', 'chapter-3']) expect(save).toContain(ch)
   expect(errors, `page errors: ${errors.join(' | ')}`).toEqual([])
 })
 

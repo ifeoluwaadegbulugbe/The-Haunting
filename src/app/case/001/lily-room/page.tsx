@@ -4,7 +4,8 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Lamp, LampDesk, Sparkles, X } from 'lucide-react'
+import { ArrowLeft, Lamp, LampDesk, Search, Sparkles, X } from 'lucide-react'
+import { Sighting } from '@/components/entity/Sighting'
 import { Button, ParchmentCard } from '@/components/ui'
 import { Hotspot } from '@/components/scene/Hotspot'
 import { Gate } from '@/components/scene/CloseUpInteractions'
@@ -101,6 +102,7 @@ export default function LilyRoomPage() {
         style={{ width: 'max(100vw, 183.33dvh)', height: 'max(100dvh, 54.55vw)' }}
       >
         {art ? <img src={ROOM_ART} alt="Lily's bedroom" className="w-full h-full object-cover" draggable={false} /> : <LilyRoomDrawing />}
+        <Sighting spot="lily-room" />
         {LILY_ROOM_OBJECTS.map((o) => (
           <div
             key={o.id}
@@ -133,6 +135,9 @@ export default function LilyRoomPage() {
           <ArrowLeft size={16} /> Back to the study
         </Link>
         <span className="font-cinzel text-xs tracking-widest text-parchment-dark uppercase">Lily&rsquo;s Room</span>
+        <Link href="/case/001/search/lily-room" className="flex items-center gap-2 font-inter text-sm text-parchment-dark hover:text-parchment">
+          <Search size={16} /> Search the room
+        </Link>
         <button
           onClick={() => { audio.sfx('click'); setLamp((v) => !v) }}
           aria-pressed={lamp}

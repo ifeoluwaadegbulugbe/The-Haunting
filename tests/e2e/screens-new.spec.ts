@@ -1,8 +1,10 @@
 import { test, type Page } from '@playwright/test'
+import { handleInterruptions } from './helpers'
 
 const shot = (page: Page, name: string) => page.screenshot({ path: `test-results/screens/${name}.png` })
 
 test('new screens', async ({ page }) => {
+  await handleInterruptions(page)
   test.setTimeout(120_000)
   await page.goto('/')
   const ev = ['EV-01', 'EV-02', 'EV-03', 'EV-04', 'EV-05', 'EV-06', 'EV-07', 'EV-08', 'EV-09', 'EV-10', 'EV-11', 'EV-14', 'EV-15']
@@ -62,4 +64,24 @@ test('new screens', async ({ page }) => {
   await page.getByRole('button', { name: 'Notebook' }).click()
   await page.waitForTimeout(900)
   await shot(page, '27-notebook')
+  await page.keyboard.press('Escape')
+
+  await page.goto('/case/001/search/study')
+  await page.waitForTimeout(800)
+  await shot(page, '30-search-menu')
+  await page.getByRole('button', { name: 'Play Search' }).click()
+  await page.waitForTimeout(600)
+  await page.getByRole('button', { name: /^Find: / }).first().click()
+  await page.mouse.click(30, 300)
+  await page.waitForTimeout(300)
+  await shot(page, '31-search-play')
+
+  await page.goto('/case/001/lab')
+  await page.waitForTimeout(1000)
+  await shot(page, '32-lab')
+  await page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'UV Light on the Will' }) }).getByRole('button', { name: 'Start' }).click()
+  await page.waitForTimeout(500)
+  await page.mouse.move(700, 450)
+  await page.waitForTimeout(300)
+  await shot(page, '33-uv')
 })

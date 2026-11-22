@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Phone, SkipForward, Check, X } from 'lucide-react'
@@ -15,6 +15,8 @@ interface RevealSequenceProps {
   theorySummary?: string
   /** Where the player put each event: slot index -> event id */
   timelinePlacement?: Record<string, string>
+  /** How the cellar ending goes, and what the entity remembers (never changes the score) */
+  ending?: { kind: 'answered' | 'quiet'; memory: string }
   onComplete: () => void
 }
 
@@ -32,9 +34,12 @@ function proofFor(eventId: string) {
     .slice(0, 2)
 }
 
-export function RevealSequence({ theorySummary, timelinePlacement = {}, onComplete }: RevealSequenceProps) {
+export function RevealSequence({ theorySummary, timelinePlacement = {}, ending, onComplete }: RevealSequenceProps) {
   const [stage, setStage] = useState<Stage>('fade')
   const [shown, setShown] = useState(0)
+  const [cellarRinging, setCellarRinging] = useState(false)
+  const [cellarAnswered, setCellarAnswered] = useState(false)
+  const cellarRingRef = useRef(true)
   const voicemailWords = CASE_001.truth.finalVoicemail.split(' ')
 
   useEffect(() => {
@@ -72,7 +77,9 @@ export function RevealSequence({ theorySummary, timelinePlacement = {}, onComple
       case 'entity': audio.sfx('whisper'); audio.sfx('drone', 0.6); break
       case 'cellar':
         audio.sfx('heartbeat', 0.7)
-        t = setTimeout(() => { audio.sfx('chime', 0.6); onComplete() }, 6000)
+        // The extension rings one last time
+        t = setTimeout(() => { setCellarRinging(true); audio.sfx('phone-ring', 0.9) }, 2600)
+        i = setInterval(() => { if (cellarRingRef.current) audio.sfx('phone-ring', 0.9) }, 3200)
         break
     }
     return () => { if (t) clearTimeout(t); if (i) clearInterval(i) }
@@ -213,9 +220,34 @@ export function RevealSequence({ theorySummary, timelinePlacement = {}, onComple
               <Image src="/assets/ui/cellar-reveal.jpg" alt="The cellar at Ashworth House" fill className="object-cover" />
             </motion.div>
             <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(14,12,16,0.2), rgba(14,12,16,0.85))' }} />
-            <motion.p className="absolute inset-x-0 bottom-16 text-center font-cormorant italic text-parchment text-2xl px-6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.2, duration: 1.4 }}>
-              The phone in the cellar is silent at last.
-            </motion.p>
+            <div className="absolute inset-x-0 bottom-12 flex flex-col items-center gap-4 text-center px-6">
+              <AnimatePresence mode="wait">
+                {!cellarAnswered && cellarRinging && (
+                  <motion.div key="ring" className="flex flex-col items-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <motion.div animate={{ rotate: [-12, 12, -12, 12, 0] }} transition={{ repeat: Infinity, duration: 0.6, repeatDelay: 1.6 }}>
+                      <Phone size={40} color="var(--entity-glow)" />
+                    </motion.div>
+                    <p className="font-cormorant italic text-parchment text-2xl">On the wall, the cellar extension is ringing.</p>
+                    <Button variant="primary" onClick={() => { cellarRingRef.current = false; setCellarAnswered(true); audio.sfx('pickup'); setTimeout(() => audio.sfx('whisper', 0.6), 600) }}>
+                      Answer the cellar phone
+                    </Button>
+                  </motion.div>
+                )}
+                {cellarAnswered && (
+                  <motion.div key="answered" className="flex flex-col items-center gap-4 max-w-2xl" initial={{ opacity: 0, filter: 'blur(6px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 1.6 }}>
+                    <p className="font-caveat text-3xl leading-snug" style={{ color: 'var(--entity-glow)', textShadow: '0 0 18px var(--entity)' }}>
+                      {ending?.memory ?? 'You came all this way.'}
+                    </p>
+                    <p className="font-cormorant italic text-parchment text-2xl">
+                      {ending?.kind === 'answered'
+                        ? '\u201cThank you for answering. I can stop now.\u201d The line clicks. For the first time in eighteen years, the house is quiet.'
+                        : '\u201cYou came down. That will have to be enough.\u201d The line goes dead. Somewhere above you, very faintly, a phone begins to ring again.'}
+                    </p>
+                    <Button variant="primary" onClick={() => { audio.sfx('chime', 0.6); onComplete() }}>Leave the cellar</Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

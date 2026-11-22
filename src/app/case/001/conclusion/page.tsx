@@ -7,6 +7,8 @@ import { Lock } from 'lucide-react'
 import { ParchmentCard, Button } from '@/components/ui'
 import { TopBar } from '@/components/archive/TopBar'
 import { RevealSequence } from '@/components/conclusion/RevealSequence'
+import { Confrontation } from '@/components/conclusion/Confrontation'
+import { endingKind, memoryLine } from '@/store/story'
 import { ReportCard } from '@/components/conclusion/ReportCard'
 import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
@@ -16,7 +18,7 @@ import { evaluateEntityRules, dispatchEntityActions } from '@/lib/entity'
 import { CASE_001 } from '@/data/case001'
 import { thoroughness } from '@/data/achievements'
 
-type Phase = 'submission' | 'reveal' | 'report'
+type Phase = 'submission' | 'trial' | 'reveal' | 'report'
 
 export default function ConclusionPage() {
   const router = useRouter()
@@ -124,11 +126,16 @@ export default function ConclusionPage() {
         rank: result.rank,
       })
     }
-    setPhase('reveal')
+    // Accusing Julian leads to the confrontation; any other accusation goes straight to the truth
+    setPhase(theory.culprit === 'Julian' ? 'trial' : 'reveal')
+  }
+
+  if (phase === 'trial') {
+    return <Confrontation evidenceIds={Object.keys(collectedEvidence)} onDone={(mistakes) => { state.setTrial({ mistakes }); setPhase('reveal') }} />
   }
 
   if (phase === 'reveal') {
-    return <RevealSequence theorySummary={theory.summary} timelinePlacement={theory.timelinePlacement} onComplete={() => setPhase('report')} />
+    return <RevealSequence theorySummary={theory.summary} timelinePlacement={theory.timelinePlacement} ending={{ kind: endingKind(state), memory: memoryLine(state) }} onComplete={() => setPhase('report')} />
   }
 
   if (phase === 'report' && result) {

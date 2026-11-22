@@ -9,6 +9,7 @@ import { TopBar } from '@/components/archive/TopBar'
 import { RoomStage } from '@/components/room/RoomStage'
 import { Hotspot } from '@/components/scene/Hotspot'
 import { CaseAssignment } from '@/components/cinematic/CaseAssignment'
+import { Sighting } from '@/components/entity/Sighting'
 import { useHydrated } from '@/store/useHydrated'
 import { useGameStore } from '@/store/gameStore'
 import { selectProgress, selectRank, selectUnlockedSections } from '@/store/selectors'
@@ -106,6 +107,7 @@ export default function HQPage() {
         ratio={HQ_ROOM.ratio}
         glows={HQ_ROOM.glows}
       >
+        <Sighting spot="hq" />
         {HQ_OBJECTS.map((o) => (
           <div key={o.id}>
             <Hotspot object={asSceneObject(o)} state="undiscovered" onClick={() => openObject(o.id)} />

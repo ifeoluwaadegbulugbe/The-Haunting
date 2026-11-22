@@ -13,6 +13,14 @@ export const INITIAL_STATE: GameState = {
   achievements: [],
   deviceUnlocks: [],
   calls: {},
+  search: {},
+  starsSpent: 0,
+  forensics: [],
+  lab: {},
+  fragments: [],
+  partnerSeen: [],
+  trial: undefined,
+  clockEvents: [],
   investigator: { name: '', startedAt: 0 },
   discoveredObjects: [],
   inspectedObjects: [],
@@ -59,6 +67,19 @@ interface GameStore extends GameState {
 
   // The 11:13 calls
   resolveCall: (id: string, outcome: 'answered' | 'ignored') => void
+
+  // Searches, stars, forensics
+  recordSearch: (key: string, score: number, stars: number) => void
+  /** Spends stars if the player has enough. Returns whether it worked. */
+  spendStars: (n: number) => boolean
+  completeForensic: (id: string) => void
+  queueLab: (id: string, readyAt: number) => void
+
+  // Entity, partner, trial
+  collectFragment: (id: string) => void
+  markPartnerSeen: (id: string) => void
+  setTrial: (trial: { mistakes: number }) => void
+  markClockEvent: (day: string) => void
 
   // Witness
   addChatTurn: (witnessId: string, turn: { role: 'player' | 'witness'; text: string; at: number }) => void
@@ -148,6 +169,38 @@ export const useGameStore = create<GameStore>()(
       // Each call is resolved once; the first outcome stands
       resolveCall: (id, outcome) =>
         set((s) => (s.calls?.[id] ? {} : { calls: { ...(s.calls ?? {}), [id]: outcome } })),
+
+      // A search keeps its best result
+      recordSearch: (key, score, stars) =>
+        set((s) => {
+          const prev = s.search?.[key]
+          if (prev && prev.best >= score && prev.stars >= stars) return {}
+          return { search: { ...(s.search ?? {}), [key]: { best: Math.max(prev?.best ?? 0, score), stars: Math.max(prev?.stars ?? 0, stars) } } }
+        }),
+
+      spendStars: (n) => {
+        const s = useGameStore.getState()
+        if (starsAvailable(s) < n) return false
+        set({ starsSpent: (s.starsSpent ?? 0) + n })
+        return true
+      },
+
+      completeForensic: (id) =>
+        set((s) => ((s.forensics ?? []).includes(id) ? {} : { forensics: [...(s.forensics ?? []), id] })),
+
+      queueLab: (id, readyAt) =>
+        set((s) => ({ lab: { ...(s.lab ?? {}), [id]: readyAt } })),
+
+      collectFragment: (id) =>
+        set((s) => ((s.fragments ?? []).includes(id) ? {} : { fragments: [...(s.fragments ?? []), id] })),
+
+      markPartnerSeen: (id) =>
+        set((s) => ((s.partnerSeen ?? []).includes(id) ? {} : { partnerSeen: [...(s.partnerSeen ?? []), id] })),
+
+      setTrial: (trial) => set({ trial }),
+
+      markClockEvent: (day) =>
+        set((s) => ((s.clockEvents ?? []).includes(day) ? {} : { clockEvents: [...(s.clockEvents ?? []), day] })),
 
       // ── Witness ───────────────────────────────────────────────────────
       addChatTurn: (witnessId, turn) =>
@@ -382,6 +435,14 @@ export const useGameStore = create<GameStore>()(
 )
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+
+/** Stars earned in searches (best per scene and mode) minus stars spent. */
+export function starsEarned(s: Pick<GameState, 'search'>): number {
+  return Object.values(s.search ?? {}).reduce((n, r) => n + r.stars, 0)
+}
+export function starsAvailable(s: Pick<GameState, 'search' | 'starsSpent'>): number {
+  return Math.max(0, starsEarned(s) - (s.starsSpent ?? 0))
+}
 
 function attentionToStage(attention: number): 0 | 1 | 2 | 3 | 4 {
   if (attention >= 70) return 3

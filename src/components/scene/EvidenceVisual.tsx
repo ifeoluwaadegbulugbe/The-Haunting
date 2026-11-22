@@ -195,6 +195,9 @@ function Logbook() {
       <p className={`${hand} mt-3 pl-3 border-l-2 border-brown`}>
         Mr Julian asked to borrow the house key copies — 4 Nov.
       </p>
+      <p className="font-inter text-xs text-brown mt-2 pl-3">
+        Copies collected. Signed: <span className={`${hand} text-obsidian`} style={{ fontSize: '1.15rem' }}>J. Ashworth</span>
+      </p>
     </Paper>
   )
 }

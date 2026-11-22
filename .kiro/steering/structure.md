@@ -23,6 +23,8 @@ src/
       witnesses/[id]/page.tsx             # Witness Interrogation
       evidence/page.tsx                   # Evidence Board
       lily-room/page.tsx                  # Lily's room (optional, by torchlight)
+      lab/page.tsx                        # Forensics Lab
+      search/[id]/page.tsx                # Timed room searches
       lily-room/page.tsx                  # Lily's room (optional, by torchlight)
       conclusion/page.tsx                 # Case Conclusion
     api/

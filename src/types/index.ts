@@ -260,6 +260,20 @@ export const GameStateSchema = z.object({
   deviceUnlocks: z.array(z.string()).default([]),
   // The 11:13 calls the player answered or let ring
   calls: z.record(z.enum(['answered', 'ignored'])).default({}),
+  // Timed room searches: best score and stars per "scene:mode"
+  search: z.record(z.object({ best: z.number(), stars: z.number() })).default({}),
+  starsSpent: z.number().default(0),
+  // Forensics: finished bench work, and lab requests (task id -> time the result is ready)
+  forensics: z.array(z.string()).default([]),
+  lab: z.record(z.number()).default({}),
+  // Fragments of Clara's last hour, found by catching the entity in a reflection
+  fragments: z.array(z.string()).default([]),
+  // Partner notes already shown
+  partnerSeen: z.array(z.string()).default([]),
+  // The confrontation with Julian (presentation only; never changes the score)
+  trial: z.object({ mistakes: z.number() }).optional(),
+  // Days on which the real-clock 11:13 event has happened (YYYY-MM-DD)
+  clockEvents: z.array(z.string()).default([]),
   investigator: z.object({
     name: z.string(),
     startedAt: z.number(),

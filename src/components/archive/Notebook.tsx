@@ -7,8 +7,9 @@ import { useGameStore } from '@/store/gameStore'
 import { buildNotebook } from '@/lib/case/notebook'
 import { CASE_001 } from '@/data/case001'
 import { audio } from '@/lib/audio/engine'
+import { CLARA_FRAGMENTS } from '@/data/case001/story'
 
-const PAGES = ['Open questions', 'Doesn\u2019t add up', 'Found so far'] as const
+const PAGES = ['Open questions', 'Doesn\u2019t add up', 'Found so far', 'Clara\u2019s last hour'] as const
 
 /** The investigator's notebook: writes itself up from what has been found. */
 export function Notebook({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -117,6 +118,23 @@ export function Notebook({ open, onClose }: { open: boolean; onClose: () => void
                         ))}
                       </ul>
                     )
+                  )}
+
+                  {page === 3 && (
+                    <>
+                      <p className="font-inter text-xs text-brown mb-3">{(state.fragments ?? []).length} of {CLARA_FRAGMENTS.length} memories. Watch reflections, windows and doorways: sometimes she is there.</p>
+                      <ul className="space-y-3">
+                        {CLARA_FRAGMENTS.map((f) => {
+                          const got = (state.fragments ?? []).includes(f.id)
+                          return (
+                            <li key={f.id}>
+                              <p className="font-inter text-[10px] tracking-[0.2em] text-brown">{f.time.toUpperCase()}</p>
+                              {got ? <p className="font-caveat text-xl text-obsidian leading-snug">{f.text}</p> : <p className="font-inter text-sm text-brown">Not yet found.</p>}
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </>
                   )}
 
                   {page === 2 && (

@@ -9,6 +9,10 @@ import { AudioSettings } from '@/components/audio/AudioSettings'
 import { FxLayer } from '@/components/fx/FxLayer'
 import { NextLead } from '@/components/archive/NextLead'
 import { IncomingCall } from '@/components/entity/IncomingCall'
+import { PartnerNotes } from '@/components/archive/PartnerNotes'
+import { ChapterCard } from '@/components/cinematic/ChapterCard'
+import { EntityPresence } from '@/components/entity/EntityPresence'
+import { FragmentCard } from '@/components/entity/Sighting'
 import '@/styles/globals.css'
 
 const cinzel = Cinzel({
@@ -64,6 +68,10 @@ export default function RootLayout({
           <FxLayer />
           <NextLead />
           <IncomingCall />
+          <PartnerNotes />
+          <ChapterCard />
+          <EntityPresence />
+          <FragmentCard />
         </HydrationGuard>
         <HauntLevelSync />
         <NotificationTray />

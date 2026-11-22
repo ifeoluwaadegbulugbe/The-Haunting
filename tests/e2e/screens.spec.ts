@@ -1,5 +1,6 @@
 // Captures key screens for a visual check. Not part of the pass/fail playthrough.
 import { test, type Page } from '@playwright/test'
+import { handleInterruptions } from './helpers'
 
 const shot = (page: Page, name: string) => page.screenshot({ path: `test-results/screens/${name}.png` })
 const ring = (page: Page, name: string) => page.locator(`button[aria-pressed][aria-label="${name}"]`)
@@ -18,6 +19,7 @@ async function closeUp(page: Page, name: string, file: string, act?: (p: Page) =
 }
 
 test('screens', async ({ page }) => {
+  await handleInterruptions(page)
   test.setTimeout(180_000)
   await page.goto('/')
   await page.waitForTimeout(800)

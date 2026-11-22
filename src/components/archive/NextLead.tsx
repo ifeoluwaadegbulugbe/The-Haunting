@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Compass, X, NotebookPen } from 'lucide-react'
+import { Compass, X, NotebookPen, Star } from 'lucide-react'
+import { partnerHint } from '@/store/story'
 import { Notebook } from './Notebook'
 import { Button } from '@/components/ui'
 import { useHydrated } from '@/store/useHydrated'
-import { useGameStore } from '@/store/gameStore'
+import { useGameStore, starsAvailable } from '@/store/gameStore'
 import { selectNextStep, type CaseSection } from '@/store/selectors'
 import { CASE_001 } from '@/data/case001'
 import { audio } from '@/lib/audio/engine'
@@ -32,6 +33,8 @@ export function NextLead() {
   // Opened by hand while folded (on the board, or in the section the lead points to)
   const [openHere, setOpenHere] = useState(false)
   const [notebookOpen, setNotebookOpen] = useState(false)
+  const [reedHint, setReedHint] = useState<string | null>(null)
+  useEffect(() => setReedHint(null), [pathname])
   useEffect(() => setOpenHere(false), [pathname])
 
   useEffect(() => {
@@ -66,6 +69,11 @@ export function NextLead() {
     sessionStorage.removeItem(DISMISSED_KEY); setDismissed(null)
   }
   const go = () => { audio.sfx('click'); router.push(step.href) }
+  const askReed = () => {
+    if (!useGameStore.getState().spendStars(1)) return
+    audio.sfx('page')
+    setReedHint(partnerHint(useGameStore.getState(), CASE_001))
+  }
 
   return (
     <>
@@ -105,6 +113,18 @@ export function NextLead() {
             <p className="font-inter text-base text-obsidian leading-snug mt-1.5">{step.text}</p>
             {step.section !== here && (
               <Button variant="primary" onClick={go} className="mt-3 px-4 py-1.5">{step.action}</Button>
+            )}
+            {reedHint ? (
+              <p className="font-inter text-sm text-obsidian mt-3 pt-3 border-t border-brown"><span className="font-semibold">Reed: </span>{reedHint}</p>
+            ) : (
+              <button
+                onClick={askReed}
+                disabled={starsAvailable(state) < 1}
+                title={starsAvailable(state) < 1 ? 'Earn stars by searching rooms' : undefined}
+                className="mt-3 flex items-center gap-1.5 font-inter text-sm text-brown underline disabled:opacity-50 disabled:no-underline"
+              >
+                <Star size={13} /> Ask Reed for a specific hint (1 star, you have {starsAvailable(state)})
+              </button>
             )}
           </motion.div>
         )}

@@ -281,3 +281,46 @@ Extra clues hidden inside item close-ups. Relevance `optional`: they reward thor
 **Lily's room** is an optional second location, opened once EV-09 is held and explored by torchlight. It holds OC-05, OC-06 and atmosphere only.
 
 **Device puzzles (Digital Archives).** These change how a record is opened, never what it yields or when sections unlock. Each has escalating hints. Clara's laptop needs a password (her diary: "her name, then the day of her concert", so `lily14`). The deleted voicemail (DR-voicemail) is rebuilt by scrubbing the damaged tape. Edmund's photo (DR-photo) is enhanced until the plate of Julian's car reads J4 ASH.
+
+---
+
+## 9.12 Forensics and the killer profile (added with developer approval)
+
+Optional bench work in the Forensics Lab. Results restate or support §9.1. None is needed to finish, and none changes the score.
+
+| ID | Task | Needs | Lab wait | Result |
+|---|---|---|---|---|
+| `F-prints` | Dust the telephone | EV-01 | 45 s | Handset wiped; a man's thumbprint on the cradle with the outline of a ring beside it |
+| `F-jigsaw` | Rebuild the torn photograph | EV-02, EV-05 | none | Julian, Christmas 2007, hand on Lily's shoulder, gold signet ring |
+| `F-rubbing` | Pencil rubbing of the diary | EV-03 | none | "11 Nov. J. is coming tonight about the will. E. says he will not sign, whatever happens. I have shown Lily the cellar telephone. Just in case." |
+| `F-uv` | UV light on the will | EV-06, EV-08 | 60 s | Three rubbed-out practices of Edmund's signature, in the same hand as "J. Ashworth" in the logbook's key-copy entry |
+| `F-plate` | Run the number plate | EV-14 | 30 s | J4 ASH: a green Mercedes saloon registered to Julian Ashworth |
+
+**Killer profile traits:** at the house after dark on 11 Nov (EV-14); deep in debt (EV-10); had copies of the house keys made (EV-08 or D3); wears a gold signet ring (F-jigsaw, F-prints or OC-01); drives J4 ASH (F-plate); practised Edmund's signature (F-uv). Only Julian fits; Dorothea and Margaret fit none.
+
+Lab waits can be skipped for one star. Stars are earned only in room searches.
+
+---
+
+## 9.13 Chapters, the confrontation and the entity's reach (added with developer approval)
+
+**Chapters.** 1 *The Call* closes when the Digital Archives unlock; 2 *The Records* when the witnesses unlock; 3 *The Witnesses* when the Conclusion unlocks. Each ends with a cliffhanger card. The partner, **Archivist Reed**, comments in text (no voice) at fixed moments.
+
+**The confrontation.** If the theory names Julian, he defends himself on five points before the reveal. Each is answered with evidence from a fixed table: Lisbon (EV-14 or EV-15); Edmund alive when he left (EV-07); no motive (EV-06 or EV-10); the family drove away (EV-13 or EV-08); nobody could have called (EV-11 or EV-01). Wrong answers are counted for a trial grade only. He then asks for a solicitor (J6) and the court finds him guilty of Edmund's murder and of the deaths of Clara and Lily. The score is decided before the confrontation and never changes.
+
+**Room searches.** Timed hidden-object searches of the study and Lily's room in four modes (normal, by candlelight, scrambled names, 11:13 with moved objects). They earn stars only.
+
+**Clara's last hour.** Once the entity is aware, it can be glimpsed in the HQ mirror, between the study books, at Lily's window and in the interview room doorway. Catching it reveals one of six fragments (CF-1 to CF-6), consistent with §9.1:
+
+| ID | Time | Fragment |
+|---|---|---|
+| `CF-1` | 23:09 | The door shut above us. I heard the key turn twice. Lily did not cry. She held my sleeve. |
+| `CF-2` | 23:10 | It is so cold down here. I called up the stairs for Edmund. Nobody called back. |
+| `CF-3` | 23:11 | Lily remembered before I did. "The secret phone, Mummy." The one Julian doesn't know about. |
+| `CF-4` | 23:13 | I dialled the nearest number I knew. Mrs Hale. She is always up late. It rang and rang. |
+| `CF-5` | 23:14 | Forty-one seconds. I counted them out loud so Lily would have something to listen to. |
+| `CF-6` | after | I am not angry with her. I only wanted someone to pick up. I will keep ringing until someone does. |
+
+**The entity's reach.** While the player is away the tab reads "She is still calling…"; on return the family photograph briefly shows an extra figure. At 11:13 on the player's own clock it calls (once a day). While hostile it blows out the candles in the study (one click relights; never more than 60% dark, never blocks). It remembers how it was treated (calls answered or ignored, Lily's room visited, Margaret's trust, fragments kept) and says so in the cellar.
+
+**The cellar ending.** The player answers the cellar extension. If two or more 11:13 calls were answered, or four or more fragments found, she thanks them and the house falls quiet; otherwise the line goes dead and a phone begins to ring again. The ending never changes the score.

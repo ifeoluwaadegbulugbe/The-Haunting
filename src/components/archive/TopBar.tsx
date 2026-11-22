@@ -24,6 +24,7 @@ const NAV_LINKS = [
   { label: 'Cases', href: '/hq', sectionKey: null },
   { label: 'Scene', href: '/case/001/scene', sectionKey: 'scene' as const },
   { label: 'Archive', href: '/case/001/archive', sectionKey: 'archive' as const },
+  { label: 'Lab', href: '/case/001/lab', sectionKey: null },
   { label: 'Evidence', href: '/case/001/evidence', sectionKey: null },
   { label: 'Witnesses', href: '/case/001/witnesses/margaret', sectionKey: 'witnesses' as const },
   { label: 'Conclude', href: '/case/001/conclusion', sectionKey: 'conclusion' as const },

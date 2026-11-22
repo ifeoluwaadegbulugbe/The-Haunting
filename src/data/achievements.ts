@@ -1,5 +1,7 @@
 import type { GameState } from '@/types'
 import { CASE_001 } from '@/data/case001'
+import { FORENSIC_TASKS } from '@/data/case001/forensics'
+import { CLARA_FRAGMENTS } from '@/data/case001/story'
 
 export interface Achievement {
   id: string
@@ -80,6 +82,36 @@ export const ACHIEVEMENTS: Achievement[] = [
     title: 'By Torchlight',
     description: 'Search Lily\u2019s room.',
     earned: (s) => has(s, 'OC-05') && has(s, 'OC-06'),
+  },
+  {
+    id: 'keen-eye',
+    title: 'Keen Eye',
+    description: 'Earn five stars in a room search.',
+    earned: (s) => Object.values(s.search ?? {}).some((r) => r.stars >= 5),
+  },
+  {
+    id: 'forensic',
+    title: 'Bench Work',
+    description: 'Finish every task in the forensics lab.',
+    earned: (s) => FORENSIC_TASKS.every((t) => (s.forensics ?? []).includes(t.id)),
+  },
+  {
+    id: 'her-voice',
+    title: 'Her Last Hour',
+    description: 'Find all six of Clara\u2019s memories.',
+    earned: (s) => (s.fragments ?? []).length >= CLARA_FRAGMENTS.length,
+  },
+  {
+    id: 'on-time',
+    title: 'On Time',
+    description: 'Be playing when your own clock reads 11:13.',
+    earned: (s) => (s.clockEvents ?? []).length > 0,
+  },
+  {
+    id: 'cross-examined',
+    title: 'Cross-Examined',
+    description: 'Break Julian\u2019s defence without a single wrong answer.',
+    earned: (s) => s.trial?.mistakes === 0,
   },
   {
     id: 'master',

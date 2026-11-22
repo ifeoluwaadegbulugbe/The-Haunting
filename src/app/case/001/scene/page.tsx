@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, DoorOpen } from 'lucide-react'
+import { ArrowLeft, DoorOpen, Search } from 'lucide-react'
+import { Sighting } from '@/components/entity/Sighting'
+import { CandleOut } from '@/components/entity/CandleOut'
 import { Hotspot } from '@/components/scene/Hotspot'
 import { ObjectPanel } from '@/components/scene/ObjectPanel'
 import { EvidenceTray } from '@/components/scene/EvidenceTray'
@@ -213,6 +215,7 @@ export default function ScenePage() {
         scrollRef={sceneRef}
         glows={[{ x: 40, y: 53, size: 8 }, { x: 84, y: 24, size: 6 }]}
       >
+        <Sighting spot="study" />
         <div
           className="absolute inset-0 transition-opacity duration-300"
           style={{ opacity: zoomObject ? 0 : 1, pointerEvents: zoomObject ? 'none' : undefined }}
@@ -244,6 +247,17 @@ export default function ScenePage() {
         <span className="font-cinzel text-xs tracking-widest text-parchment-dark uppercase">
           Explore the Scene
         </span>
+        <div className="flex items-center gap-2">
+        {!selectedObject && (
+          <Link
+            href="/case/001/search/study"
+            onClick={() => audio.sfx('whoosh', 0.5)}
+            className="flex items-center gap-2 font-inter text-xs px-3 py-1.5 rounded border border-gold text-parchment hover:border-parchment-light"
+            style={{ background: 'rgba(14,12,16,0.75)' }}
+          >
+            <Search size={14} color="var(--gold)" aria-hidden="true" /> Search the study
+          </Link>
+        )}
         {/* Lily's things lead upstairs to her room (optional, explored by torchlight) */}
         {collectedEvidence['EV-09'] && !selectedObject && (
           <Link
@@ -255,6 +269,7 @@ export default function ScenePage() {
             <DoorOpen size={14} color="var(--gold)" aria-hidden="true" /> Go upstairs: Lily&rsquo;s room
           </Link>
         )}
+        </div>
         <button
           onClick={() => setSelectedObject(null)}
           aria-label="Close panel"
@@ -326,6 +341,8 @@ export default function ScenePage() {
           onDismiss={() => setEntityOverlayText(null)}
         />
       )}
+
+      <CandleOut />
 
       {/* ER-01 entity overlay */}
       <EntityOverlay
