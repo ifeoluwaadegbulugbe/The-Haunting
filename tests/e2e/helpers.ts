@@ -14,7 +14,7 @@ export async function handleInterruptions(page: Page) {
     seen.calls++
   }, { noWaitAfter: true })
   await page.addLocatorHandler(page.getByRole('dialog', { name: /^Chapter \d closed$/ }), async () => {
-    await page.getByRole('dialog', { name: /^Chapter \d closed$/ }).first().getByRole('button', { name: 'Continue' }).click({ force: true })
+    await page.getByRole('dialog', { name: /^Chapter \d closed$/ }).first().getByRole('button', { name: 'Continue' }).click({ force: true, timeout: 3000 }).catch(() => { /* the card was already closing */ })
     seen.chapters++
   }, { noWaitAfter: true })
   await page.addLocatorHandler(page.getByRole('alertdialog', { name: 'It is 11:13' }), async () => {

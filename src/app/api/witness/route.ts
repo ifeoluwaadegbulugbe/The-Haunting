@@ -6,6 +6,7 @@ import { resolveWitnessTurn } from '@/lib/ai/witness/resolver'
 import { buildWitnessPrompt } from '@/lib/ai/witness/prompt-builder'
 import { validateReply } from '@/lib/ai/witness/validator'
 import { pickFallback } from '@/lib/ai/witness/fallback'
+import { currentLeads, isRepeat } from '@/lib/ai/witness/leads'
 
 // ── Request schema ─────────────────────────────────────────────────────────
 
@@ -119,15 +120,24 @@ export async function POST(request: NextRequest) {
     logFailure(witnessId, 'provider', e)
   }
 
-  // Validate reply; retry once if failed
-  let validatedReply = providerFailed ? null : validateReply(raw, allowedFactIds, lockedFacts, allowedStatements)
+  // Validate reply; retry once if failed. A reply that restates an earlier one also fails,
+  // so the conversation keeps moving instead of circling the same sentence.
+  const earlierReplies = snapshot.recentTurns.filter((t) => t.role === 'witness').map((t) => t.text)
+  const check = (text: string) => {
+    const v = validateReply(text, allowedFactIds, lockedFacts, allowedStatements)
+    if (v.ok && isRepeat(v.reply!.reply, earlierReplies)) return { ok: false, reason: 'repeats an earlier reply' } as typeof v
+    return v
+  }
+  let validatedReply = providerFailed ? null : check(raw)
 
   if (!providerFailed && validatedReply && !validatedReply.ok) {
     // Retry with stricter suffix
-    const strictPrompt = prompt + '\n\nREMINDER: Return ONLY valid JSON. No text outside the JSON object.'
+    const strictPrompt = prompt + (validatedReply.reason === 'repeats an earlier reply'
+      ? '\n\nREMINDER: You already said that. Say something new: give one LEAD or one MEMORY in your own words. Return ONLY valid JSON.'
+      : '\n\nREMINDER: Return ONLY valid JSON. No text outside the JSON object.')
     try {
-      const raw2 = await provider.complete(strictPrompt, { temperature: 0.3, maxTokens: 1024, json: true })
-      validatedReply = validateReply(raw2, allowedFactIds, lockedFacts, allowedStatements)
+      const raw2 = await provider.complete(strictPrompt, { temperature: 0.7, maxTokens: 1024, json: true })
+      validatedReply = check(raw2)
       if (!validatedReply.ok) logFailure(witnessId, 'validation', validatedReply.reason)
     } catch (e) {
       providerFailed = true
@@ -137,10 +147,15 @@ export async function POST(request: NextRequest) {
 
   // Fallback if still not valid
   if (providerFailed || !validatedReply?.ok) {
+    // When this turn already tells something new, the scripted line stays short: no lead on top
+    const toldNow = revealGuarantee.some(mustBeTold)
     const { line: fallbackReply, mood: fallbackMood } = pickFallback(witness.fallbackLines, {
       turns: snapshot.recentTurns.filter((t) => t.role === 'player').length,
       presented: Boolean(presentedEvidenceId),
       trust: snapshot.trust,
+      leads: toldNow ? [] : currentLeads(witness, lockedFacts),
+      details: witness.details,
+      recent: earlierReplies,
     })
     // Facts that must be told are guaranteed; small talk waits for a real reply
     const newlyRevealed = buildRevealGuarantee(revealGuarantee.filter(mustBeTold))

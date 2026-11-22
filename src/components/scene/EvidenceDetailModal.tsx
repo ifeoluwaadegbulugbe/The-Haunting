@@ -1,7 +1,10 @@
 'use client'
+import { useState } from 'react'
 
 import { Modal, Button } from '@/components/ui'
 import { EvidenceVisual } from './EvidenceVisual'
+import { useGameStore } from '@/store/gameStore'
+import { CASE_001 } from '@/data/case001'
 import type { Evidence } from '@/types'
 
 interface EvidenceDetailModalProps {
@@ -88,6 +91,8 @@ export function EvidenceDetailModal({
           </div>
         )}
 
+        {evidence.explanation && <CrossCheck evidence={evidence} />}
+
         <p className="font-caveat text-xs text-parchment-dark">
           Source: {evidence.source}
         </p>
@@ -108,5 +113,29 @@ function Badge({ label, color }: { label: string; color: string }) {
     >
       {label}
     </span>
+  )
+}
+
+/**
+ * Red herrings can be checked against the evidence that answers them. The player
+ * chooses to do it; nothing changes in the case, it only explains the record.
+ */
+function CrossCheck({ evidence }: { evidence: Evidence }) {
+  const collected = useGameStore((s) => s.collectedEvidence)
+  const [open, setOpen] = useState(false)
+  const held = (evidence.refutedBy ?? []).filter((id) => collected[id])
+  const names = held.map((id) => CASE_001.evidence.find((e) => e.id === id)?.name ?? id)
+  if (held.length === 0) {
+    return <p className="font-inter text-xs text-parchment-dark italic">Something about this does not sit right. You have nothing yet to check it against.</p>
+  }
+  return open ? (
+    <div className="rounded-sm p-3 border-l-2 border-gold" style={{ background: 'rgba(95,127,107,0.12)' }}>
+      <p className="font-inter text-xs uppercase tracking-wider text-parchment-dark">Checked against {names.join(' and ')}</p>
+      <p className="font-inter text-sm text-parchment leading-relaxed mt-1">{evidence.explanation}</p>
+    </div>
+  ) : (
+    <Button variant="secondary" className="text-xs" onClick={() => setOpen(true)}>
+      Cross-check against {names[0]}
+    </Button>
   )
 }

@@ -3,19 +3,27 @@ export interface StampProps {
   variant: 'unresolved' | 'solved'
 }
 
+/** Width that fits the label: about 13 units a letter at this size, never narrower than the original stamp. */
+export function stampWidth(label: string): number {
+  return Math.max(140, Math.round(label.length * 13.5 + 30))
+}
+
 export function Stamp({ label, variant }: StampProps) {
   const color = variant === 'solved' ? 'var(--verdigris)' : 'var(--thread)'
+  const w = stampWidth(label)
 
   return (
     <svg
-      viewBox="0 0 140 48"
-      className="w-36 h-12 select-none"
+      viewBox={`0 0 ${w} 48`}
+      className="h-12 select-none"
+      style={{ width: w * (144 / 140) }}
       aria-label={label}
       role="img"
+      overflow="visible"
     >
       {/* rough border */}
       <rect
-        x="2" y="2" width="136" height="44"
+        x="2" y="2" width={w - 4} height="44"
         rx="3"
         fill="none"
         stroke={color}
@@ -24,7 +32,7 @@ export function Stamp({ label, variant }: StampProps) {
         opacity="0.85"
       />
       <text
-        x="70" y="31"
+        x={w / 2} y="31"
         textAnchor="middle"
         dominantBaseline="middle"
         fontFamily="var(--font-cinzel), serif"
@@ -32,7 +40,7 @@ export function Stamp({ label, variant }: StampProps) {
         fontSize="15"
         fill={color}
         letterSpacing="3"
-        transform="rotate(-8 70 24)"
+        transform={`rotate(-${w > 160 ? 4 : 8} ${w / 2} 24)`}
         opacity="0.9"
       >
         {label.toUpperCase()}

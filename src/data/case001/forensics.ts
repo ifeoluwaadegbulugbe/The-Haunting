@@ -80,10 +80,14 @@ export interface ProfileTrait {
   id: string
   text: string
   /** Known once any of these is true */
-  from: { evidence?: string[]; facts?: string[]; forensics?: string[] }
+  from: { evidence?: string[]; facts?: string[]; forensics?: string[]; contradictions?: string[] }
 }
 
 export const PROFILE_TRAITS: ProfileTrait[] = [
+  // The first three fit more than one suspect, so the early profile does not settle the case
+  { id: 'T-LIED', text: 'Lied about the night of 11 November', from: { contradictions: ['CX-01', 'CX-02', 'CX-03', 'CX-04'] } },
+  { id: 'T-ACCESS', text: 'Could let themselves into the house', from: { evidence: ['EV-08', 'EV-18'] } },
+  { id: 'T-GRUDGE', text: 'Quarrelled with Edmund that autumn', from: { evidence: ['EV-17', 'EV-06'] } },
   { id: 'T-THERE', text: 'Was at Ashworth House after dark on 11 November', from: { evidence: ['EV-14'] } },
   { id: 'T-DEBT', text: 'Was deep in debt', from: { evidence: ['EV-10'] } },
   { id: 'T-KEYS', text: 'Had copies made of the house keys', from: { evidence: ['EV-08'], facts: ['D3'] } },
@@ -92,9 +96,9 @@ export const PROFILE_TRAITS: ProfileTrait[] = [
   { id: 'T-FORGER', text: 'Practised Edmund\u2019s signature', from: { forensics: ['F-uv'] } },
 ]
 
-/** Which traits fit each suspect. The truth: only Julian fits them all. */
+/** Which traits fit each suspect. The truth: only Julian fits them all (truth file §9.12, §9.14). */
 export const SUSPECT_TRAITS: Record<string, string[]> = {
-  julian: ['T-THERE', 'T-DEBT', 'T-KEYS', 'T-RING', 'T-CAR', 'T-FORGER'],
-  dorothea: [],
-  margaret: [],
+  julian: ['T-LIED', 'T-ACCESS', 'T-GRUDGE', 'T-THERE', 'T-DEBT', 'T-KEYS', 'T-RING', 'T-CAR', 'T-FORGER'],
+  dorothea: ['T-LIED', 'T-ACCESS'],
+  margaret: ['T-LIED', 'T-GRUDGE'],
 }

@@ -6,17 +6,21 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Lock, ScanSearch } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { audio } from '@/lib/audio/engine'
-import { checkLaptopPassword, laptopHint, inCar, onPlate, unzoom, PHOTO_TARGETS } from '@/lib/engine/puzzles'
+import { checkLaptopPassword, laptopHintAt, laptopHintLevel, LAPTOP_HINTS, inCar, onPlate, unzoom, PHOTO_TARGETS } from '@/lib/engine/puzzles'
 import type { DigitalRecord } from '@/types'
 
 // ── Clara's laptop: the lock screen ──────────────────────────────────────
 
-export function LaptopLock({ onUnlock }: { onUnlock: () => void }) {
+export function LaptopLock({ onUnlock, hasDiary = true }: { onUnlock: () => void; hasDiary?: boolean }) {
   const [value, setValue] = useState('')
   const [wrong, setWrong] = useState(0)
   const [shake, setShake] = useState(0)
   const [opening, setOpening] = useState(false)
-  const hint = laptopHint(wrong)
+  const [asked, setAsked] = useState(0)
+  // Hints come from wrong guesses or from asking; whichever has gone further
+  const level = Math.max(laptopHintLevel(wrong), asked)
+  const hint = laptopHintAt(level, hasDiary)
+  const askHint = () => { audio.sfx('page', 0.5); setAsked(Math.min(LAPTOP_HINTS.length, level + 1)) }
 
   const submit = () => {
     if (!value.trim() || opening) return
@@ -70,8 +74,20 @@ export function LaptopLock({ onUnlock }: { onUnlock: () => void }) {
           Incorrect password ({wrong} {wrong === 1 ? 'attempt' : 'attempts'}).
         </p>
       )}
-      {hint && <p className="font-caveat text-lg text-parchment-dark max-w-xs">{hint}</p>}
+      {/* A note stuck to the bezel, the way people really leave passwords */}
+      <div
+        className="font-caveat text-lg px-3 py-1 rotate-[-3deg] shadow-md"
+        style={{ background: 'var(--parchment-light)', color: 'var(--brown)' }}
+      >
+        new password &mdash; same as I wrote in the diary {'\u2665'}
+      </div>
+      {hint && <p role="status" className="font-caveat text-lg text-parchment-dark max-w-xs">{hint}</p>}
       {!hint && <p className="font-inter text-xs text-parchment-dark opacity-70 max-w-xs">Someone in the house may have written it down.</p>}
+      {level < LAPTOP_HINTS.length && (
+        <Button variant="ghost" className="text-xs" onClick={askHint}>
+          {level === 0 ? 'Need a hint?' : 'Another hint'}
+        </Button>
+      )}
     </motion.div>
   )
 }

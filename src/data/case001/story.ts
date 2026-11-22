@@ -54,6 +54,10 @@ export const PARTNER_NOTES: PartnerNote[] = [
   { id: 'P-ev14', when: { allOf: [{ type: 'hasEvidence', ref: 'EV-14' }] }, text: 'A car in the drive at 22:31. Send the plate to the lab.' },
   { id: 'P-cx', when: { anyOf: [{ type: 'hasContradiction', ref: 'CX-01' }, { type: 'hasContradiction', ref: 'CX-02' }, { type: 'hasContradiction', ref: 'CX-03' }, { type: 'hasContradiction', ref: 'CX-04' }, { type: 'hasContradiction', ref: 'CX-05' }, { type: 'hasContradiction', ref: 'CX-06' }] }, text: 'There it is. Once one story breaks, the others usually follow.' },
   { id: 'P-x1', when: { allOf: [{ type: 'hasEvidence', ref: 'EV-X1' }] }, text: 'That photograph was not in our files yesterday. Check it against the housekeeper\u2019s logbook.' },
+  // Red herrings (§9.14): Reed takes them seriously, as a partner would
+  { id: 'P-ev16', when: { allOf: [{ type: 'hasEvidence', ref: 'EV-16' }] }, text: 'Clara looked up one-way flights two nights before. So she was thinking of leaving. With them, or from them?' },
+  { id: 'P-ev17', when: { allOf: [{ type: 'hasEvidence', ref: 'EV-17' }] }, text: 'Mrs Hale threatened Edmund in writing. Over a hedge, but still. Keep her in mind.' },
+  { id: 'P-ev18', when: { allOf: [{ type: 'hasEvidence', ref: 'EV-18' }] }, text: 'The housekeeper handed in her notice and left on the very day they vanished. Chance, or not?' },
   { id: 'P-m4', when: { allOf: [{ type: 'hasFact', ref: 'M4' }] }, text: 'She heard it ring and let it ring. Imagine carrying that for eighteen years.' },
 ]
 

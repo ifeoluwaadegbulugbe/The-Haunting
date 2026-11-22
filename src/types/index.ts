@@ -62,6 +62,8 @@ export const EvidenceSchema = z.object({
   relatedCharacters: z.array(z.string()),
   relatedEvents: z.array(z.string()),
   refutedBy: z.array(z.string()).optional(),
+  // For red herrings: what the refuting evidence shows, revealed when the player cross-checks
+  explanation: z.string().optional(),
   assetPath: z.string().optional(),
 })
 
@@ -113,6 +115,9 @@ export const WitnessFactSchema = z.object({
   deniedLine: z.string().optional(),
   forbiddenTokens: z.array(z.string()),
   yieldsStatementId: z.string().optional(),
+  // Authored nudges given while this fact is still locked. They point at what to find or
+  // show the witness, never state the fact itself, and contain none of its forbidden tokens.
+  leads: z.array(z.string()).optional(),
 })
 
 export type WitnessFact = z.infer<typeof WitnessFactSchema>
@@ -131,6 +136,10 @@ export const WitnessSchema = z.object({
   deception: DeceptionSchema,
   speechStyle: z.string(),
   facts: z.array(WitnessFactSchema),
+  // Harmless memories the witness may use for colour (no case facts)
+  details: z.array(z.string()).optional(),
+  // Opinions about the others: they cast doubt but never decide anything
+  suspicions: z.array(z.string()).optional(),
   forbiddenTopics: z.array(z.string()),
   fallbackLines: z.object({
     greeting: z.array(z.string()),

@@ -296,7 +296,7 @@ Optional bench work in the Forensics Lab. Results restate or support §9.1. None
 | `F-uv` | UV light on the will | EV-06, EV-08 | 60 s | Three rubbed-out practices of Edmund's signature, in the same hand as "J. Ashworth" in the logbook's key-copy entry |
 | `F-plate` | Run the number plate | EV-14 | 30 s | J4 ASH: a green Mercedes saloon registered to Julian Ashworth |
 
-**Killer profile traits:** at the house after dark on 11 Nov (EV-14); deep in debt (EV-10); had copies of the house keys made (EV-08 or D3); wears a gold signet ring (F-jigsaw, F-prints or OC-01); drives J4 ASH (F-plate); practised Edmund's signature (F-uv). Only Julian fits; Dorothea and Margaret fit none.
+**Killer profile traits:** lied about the night of 11 Nov (CX-01 to CX-04: Julian, Dorothea and Margaret all fit); could let themselves into the house (EV-08 or EV-18: Julian and Dorothea fit); quarrelled with Edmund that autumn (EV-06 or EV-17: Julian and Margaret fit); at the house after dark on 11 Nov (EV-14); deep in debt (EV-10); had copies of the house keys made (EV-08 or D3); wears a gold signet ring (F-jigsaw, F-prints or OC-01); drives J4 ASH (F-plate); practised Edmund's signature (F-uv). The first three keep the early profile open; only Julian fits them all.
 
 Lab waits can be skipped for one star. Stars are earned only in room searches.
 
@@ -324,3 +324,19 @@ Lab waits can be skipped for one star. Stars are earned only in room searches.
 **The entity's reach.** While the player is away the tab reads "She is still calling…"; on return the family photograph briefly shows an extra figure. At 11:13 on the player's own clock it calls (once a day). While hostile it blows out the candles in the study (one click relights; never more than 60% dark, never blocks). It remembers how it was treated (calls answered or ignored, Lily's room visited, Margaret's trust, fragments kept) and says so in the cellar.
 
 **The cellar ending.** The player answers the cellar extension. If two or more 11:13 calls were answered, or four or more fragments found, she thanks them and the house falls quiet; otherwise the line goes dead and a phone begins to ring again. The ending never changes the score.
+
+---
+
+## 9.14 Red herrings, suspicions and leads (added with developer approval)
+
+Genuine records that point the wrong way, so the outcome is not obvious. Authenticity `misleading`, relevance `red-herring`. They are excluded from progress, are never needed, give no attention, and never change the 100-point score. Each is answered by evidence the player can hold (a one-click cross-check shows the explanation). None contradicts §9.1.
+
+| ID | Name | Found in | Points at | Answered by | What it really means |
+|---|---|---|---|---|---|
+| `EV-16` | Clara's Search History | Clara's laptop (`DR-search`) | A voluntary disappearance | EV-03, EV-12 | 9 Nov: Clara, frightened of Julian, searched for a way out and never used it. At 22:50 on the 11th she was in the house. |
+| `EV-17` | Margaret's Text to Edmund | Edmund's mobile (`DR-txt-hale`) | Margaret | EV-11 | 3 Nov: a temper over the boundary hedge. At 23:13 the cellar rang Margaret's line; she was at home, not in the house. |
+| `EV-18` | Dorothea's Letter of Notice | Clara's laptop (`DR-email-notice`) | Dorothea | EV-08 | 6 Nov: what she had seen was Julian asking for key copies. She clocked out at 16:55, hours before Julian arrived. |
+
+**Suspicions.** Each witness holds authored opinions about the others (Margaret about Dorothea's access and the cousin's charm; Dorothea about Margaret watching the house and the hedge quarrel; Julian about the housekeeper's money, the hedge, and Edmund wanting out). They are opinions, not facts, and decide nothing.
+
+**Leads.** Each gated witness fact has one or two authored leads, spoken while the fact is still locked. A lead points at what to find or show (Edmund's camera phone, the telephone company's records, the logbook kept "where the household kept its time", the laptop's deleted email, the study recorder, the cabinet paperwork) and never states the fact. A witness never repeats an earlier reply: a repeated answer is replaced by a lead or a memory.

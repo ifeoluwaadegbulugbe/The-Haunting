@@ -136,10 +136,13 @@ test('a player can finish Case 001 and get a full score', async ({ page }) => {
       const z = (await zoomed.boundingBox())!
       await page.mouse.click(z.x + z.width * 0.619, z.y + z.height * 0.836)
       await expect(page.getByText('J4 ASH', { exact: true }).last()).toBeVisible()
-      // Both records on the phone (the photo and the cached profile) can now be logged
-      await expect(page.getByRole('button', { name: 'Log as evidence' })).toHaveCount(2, { timeout: 10_000 })
+      // The photo, the cached profile and Margaret's text (a red herring) can now be logged
+      await expect(page.getByRole('button', { name: 'Log as evidence' })).toHaveCount(3, { timeout: 10_000 })
     }
     if (tab === "Clara's Laptop") {
+      // A hint can be asked for before guessing
+      await page.getByRole('button', { name: 'Need a hint?' }).click()
+      await expect(page.getByRole('status').filter({ hasText: /diary/ })).toBeVisible()
       // The password is pencilled in Clara's diary; a wrong guess is refused
       await page.getByLabel('Laptop password').fill('clara')
       await page.getByRole('button', { name: 'Unlock' }).click()

@@ -257,6 +257,69 @@ export const EVIDENCE_ITEMS: Evidence[] = [
     assetPath: '/assets/evidence/photo-window-disturbed.jpg',
   },
 
+  // ── Red herrings (truth file §9.14) ──────────────────────────────────────
+  // Genuine records that point the wrong way. They never count towards progress
+  // or the score, and each is answered by evidence the player already has.
+  {
+    id: 'EV-16',
+    name: "Clara's Search History",
+    description:
+      "Browser history from Clara's laptop, 9 November 2008: \"one way flights Lisbon\", " +
+      '"how to leave home without telling anyone", "can a mother take a child abroad alone". ' +
+      'It seems to support the story that the family left. No booking was ever made.',
+    kind: 'document',
+    source: 'DR-search',
+    location: "Digital Archives — Clara's Laptop",
+    reliability: 'medium',
+    authenticity: 'misleading',
+    relevance: 'red-herring',
+    relatedCharacters: ['clara', 'julian'],
+    relatedEvents: [],
+    refutedBy: ['EV-03', 'EV-12'],
+    explanation:
+      'Clara was frightened, not leaving. Her diary has Edmund refusing Julian more money, and at 22:50 on the 11th ' +
+      'she was still in the house, telling Beatrice that Julian was there. She searched for a way out and never used it.',
+  },
+  {
+    id: 'EV-17',
+    name: "Margaret's Text to Edmund",
+    description:
+      'A text message to Edmund\u2019s mobile from Margaret Hale, 3 November 2008: ' +
+      '"Cut that hedge back by Friday or I will take matters into my own hands. You will regret this, Edmund."',
+    kind: 'message',
+    source: 'DR-txt-hale',
+    location: "Digital Archives — Edmund's Mobile",
+    reliability: 'high',
+    authenticity: 'misleading',
+    relevance: 'red-herring',
+    relatedCharacters: ['margaret', 'edmund'],
+    relatedEvents: [],
+    refutedBy: ['EV-11'],
+    explanation:
+      'A neighbour\u2019s temper over a hedge. At 23:13 the cellar extension rang Margaret\u2019s own line, up the lane, ' +
+      'for 41 seconds. Whoever was trapped in that house was calling her for help. She was at home, not inside it.',
+  },
+  {
+    id: 'EV-18',
+    name: "Dorothea's Letter of Notice",
+    description:
+      'An email to Clara from Dorothea Pryce, 6 November 2008: "After what I have seen in this house ' +
+      'I cannot stay. My last day will be the 11th. Please do not tell Mr Ashworth why." ' +
+      'She left on the day the family vanished.',
+    kind: 'email',
+    source: 'DR-email-notice',
+    location: "Digital Archives — Clara's Laptop",
+    reliability: 'high',
+    authenticity: 'misleading',
+    relevance: 'red-herring',
+    relatedCharacters: ['dorothea', 'clara'],
+    relatedEvents: [],
+    refutedBy: ['EV-08'],
+    explanation:
+      'Her logbook explains what she had seen: Mr Julian asking for copies of the house keys on 4 November. ' +
+      'She clocked out at 16:55 on the 11th and was gone hours before Julian arrived at 21:40.',
+  },
+
   // ── Optional hidden clues ────────────────────────────────────────────────
   // Found by examining items closely. They reward thoroughness (rating and
   // achievements) but are never needed to progress and never change the score.

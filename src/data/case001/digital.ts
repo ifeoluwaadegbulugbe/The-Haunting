@@ -99,6 +99,48 @@ export const DIGITAL_RECORDS: DigitalRecord[] = [
     },
   },
 
+  // ── Red herrings (truth file §9.14): genuine, but they point the wrong way ──
+
+  {
+    id: 'DR-search',
+    device: 'laptop',
+    kind: 'note',
+    timestamp: '2008-11-09T23:40:00',
+    deleted: false,
+    yieldsEvidence: 'EV-16',
+    content: {
+      title: 'Browser history — 9 Nov 2008, 23:40',
+      body: 'one way flights Lisbon · how to leave home without telling anyone · can a mother take a child abroad alone',
+    },
+  },
+  {
+    id: 'DR-txt-hale',
+    device: 'mobile',
+    kind: 'sms',
+    timestamp: '2008-11-03T08:02:00',
+    deleted: false,
+    yieldsEvidence: 'EV-17',
+    content: {
+      from: 'M. Hale',
+      to: 'Edmund',
+      text: 'Cut that hedge back by Friday or I will take matters into my own hands. You will regret this, Edmund.',
+    },
+  },
+  {
+    id: 'DR-email-notice',
+    device: 'laptop',
+    kind: 'email',
+    timestamp: '2008-11-06T19:15:00',
+    deleted: false,
+    yieldsEvidence: 'EV-18',
+    content: {
+      from: 'dorothea.pryce@email.com',
+      to: 'clara.ashworth@email.com',
+      subject: 'My notice',
+      body: 'Mrs Ashworth, after what I have seen in this house I cannot stay. My last day will be the 11th. Please do not tell Mr Ashworth why. D. Pryce',
+    },
+  },
+
   // ── Texture records (yield no evidence — give atmosphere) ─────────────────
 
   {

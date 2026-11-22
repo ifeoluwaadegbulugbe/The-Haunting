@@ -1,7 +1,7 @@
 import type { GameState } from '@/types'
 import { FORENSIC_TASKS, PROFILE_TRAITS, SUSPECT_TRAITS, type ForensicTask } from '@/data/case001/forensics'
 
-type S = Pick<GameState, 'collectedEvidence' | 'revealedFacts' | 'forensics' | 'lab'>
+type S = Pick<GameState, 'collectedEvidence' | 'revealedFacts' | 'forensics' | 'lab'> & { contradictionsFlagged?: string[] }
 
 export type TaskStatus = 'locked' | 'open' | 'in-lab' | 'ready' | 'done'
 
@@ -27,7 +27,8 @@ export function traitKnown(traitId: string, s: S): boolean {
   return Boolean(
     t.from.evidence?.some((id) => s.collectedEvidence[id]) ||
     t.from.facts?.some((id) => s.revealedFacts.includes(id)) ||
-    t.from.forensics?.some((id) => (s.forensics ?? []).includes(id))
+    t.from.forensics?.some((id) => (s.forensics ?? []).includes(id)) ||
+    t.from.contradictions?.some((id) => (s.contradictionsFlagged ?? []).includes(id))
   )
 }
 

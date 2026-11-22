@@ -21,6 +21,17 @@ export const WITNESSES: Witness[] = [
     speechStyle:
       'Soft, slightly formal, frequently pauses. Uses phrases like "you see" and "I suppose." ' +
       'Trails off when the subject comes close to November 2008.',
+    details: [
+      'Lily used to bring me her drawings on the way home from school. Little houses, always little houses.',
+      'Clara waved from the kitchen window every morning. Every single morning, for years.',
+      'Edmund was a private man. He kept to his study. Polite, but you did not drop in on him.',
+      'Lily was to sing at her school concert that Friday. She practised up and down the lane all week.',
+    ],
+    suspicions: [
+      'Dorothea had the run of that place, every room. If anyone knew its comings and goings, it was her.',
+      'Dorothea told the police the family left before dark. I never saw them go, and I notice most things on this lane.',
+      'Edmund had a cousin who was forever asking him for something. Charming man. Too charming, I always thought.',
+    ],
     forbiddenTopics: [
       "the cellar's contents",
       'what the entity is',
@@ -59,6 +70,10 @@ export const WITNESSES: Witness[] = [
           ],
         },
         forbiddenTokens: ['Julian', 'car', 'drive'],
+        leads: [
+          'Edmund had one of those new telephones with a camera in it. He photographed everything that autumn. If you found his pictures from that evening, I might be able to tell you what I saw.',
+          'My eyes are not what they were. Show me a photograph of that evening and I will try to remember.',
+        ],
       },
       {
         id: 'M4',
@@ -72,6 +87,10 @@ export const WITNESSES: Witness[] = [
           allOf: [{ type: 'presentedEvidence', ref: 'EV-11' }],
         },
         forbiddenTokens: ['rang', 'called', '23:13', '11:13', 'Ashworth'],
+        leads: [
+          'The telephone company keeps a record of every line, doesn\u2019t it? I have always wondered what those records would show.',
+          'If you had proof of who was ringing whom that evening, I suppose I would have to tell you everything.',
+        ],
         yieldsStatementId: 'ST-M-DENY',
       },
       {
@@ -82,6 +101,7 @@ export const WITNESSES: Witness[] = [
           allOf: [{ type: 'hasFact', ref: 'M4' }],
         },
         forbiddenTokens: ['Julian'],
+        leads: ['There is something about that evening I have never told a soul. I cannot, not until you know about my telephone.'],
       },
       {
         id: 'M6',
@@ -94,6 +114,7 @@ export const WITNESSES: Witness[] = [
           ],
         },
         forbiddenTokens: ['warned', 'threatened', 'quiet'],
+        leads: ['Someone came to see me afterwards. I will tell you who, if I can trust you. Be patient with me.'],
       },
     ],
     fallbackLines: {
@@ -140,6 +161,17 @@ export const WITNESSES: Witness[] = [
     speechStyle:
       'Formal, precise. Short sentences. Refers to herself in terms of duty and service. ' +
       'Rarely volunteers information.',
+    details: [
+      'Nine years I kept that household. Not once was a meal late.',
+      'Mrs Ashworth was kind to me. Kinder than she needed to be.',
+      'Mr Ashworth locked his study whenever there were visitors. He trusted nobody with his papers.',
+      'The child was clever. Too clever, sometimes. Always hiding in places she ought not to be.',
+    ],
+    suspicions: [
+      'Mrs Hale watched that household from her window day and night. Ask her what she saw. She has never once said.',
+      'Mrs Hale and Mr Ashworth had words that autumn, over the boundary hedge. Raised voices in the lane.',
+      'Mr Julian was always charming to me. Some men are charming because they want something.',
+    ],
     forbiddenTopics: [
       "the cellar's contents",
       'what the entity is',
@@ -176,6 +208,10 @@ export const WITNESSES: Witness[] = [
           allOf: [{ type: 'presentedEvidence', ref: 'EV-08' }],
         },
         forbiddenTokens: ['keys'],
+        leads: [
+          'Every hour I worked went into my logbook. I kept it where the household kept its time. Find it and you will see I was honest about my hours.',
+          'Read my logbook before you accuse me of anything. Every request made of me is written in it.',
+        ],
       },
       {
         id: 'D4',
@@ -185,6 +221,10 @@ export const WITNESSES: Witness[] = [
           allOf: [{ type: 'presentedEvidence', ref: 'EV-13' }],
         },
         forbiddenTokens: ['paid', 'money', 'bribed'],
+        leads: [
+          'Mrs Ashworth kept everything on that laptop of hers. Even things people believed they had deleted.',
+          'I received an email the morning after. I will not discuss it unless you have read it yourself.',
+        ],
       },
       {
         id: 'D5',
@@ -197,6 +237,7 @@ export const WITNESSES: Witness[] = [
           ],
         },
         forbiddenTokens: ['never left', 'cellar'],
+        leads: ['There are things about that household I have never let myself think about. Not since the morning after.'],
       },
     ],
     fallbackLines: {
@@ -242,6 +283,16 @@ export const WITNESSES: Witness[] = [
     speechStyle:
       'Polished, measured, slightly too smooth. Uses phrases like "I understand your concern" ' +
       'and "I want to be helpful." Under pressure, sentences become shorter and harder.',
+    details: [
+      'Edmund and I grew up together. He was always the serious one.',
+      'Clara was the heart of that family. Everyone said so.',
+      'Lily called me Uncle J. I spoiled her terribly at Christmas.',
+    ],
+    suspicions: [
+      'Have you looked closely at the housekeeper? She had the run of the place, and she was always short of funds.',
+      'The neighbour, Mrs Hale, never liked Edmund. There was some ugly business over a hedge. People hold grudges for less.',
+      'If you ask me, Edmund wanted out. The pressure, the expectations. People do simply vanish, you know.',
+    ],
     forbiddenTopics: [
       "the cellar's contents",
       'what the entity is',
@@ -291,6 +342,10 @@ export const WITNESSES: Witness[] = [
           allOf: [{ type: 'presentedEvidence', ref: 'EV-14' }],
         },
         forbiddenTokens: ['visit', 'house', 'that night'],
+        leads: [
+          'Edmund was forever taking photographs on that phone of his. Ghastly habit. I do hope nobody has been through it.',
+          'Ask the telephone people, ask anyone. You will not find a single picture of me in Hollow Lane that week.',
+        ],
       },
       {
         id: 'J5',
@@ -303,6 +358,10 @@ export const WITNESSES: Witness[] = [
           ],
         },
         forbiddenTokens: ['killed', 'dead', 'murder', 'cellar'],
+        leads: [
+          'Edmund kept a recorder on his desk for dictation. Paranoid man. I never knew when it was running.',
+          'There was some family paperwork between us. Locked in his cabinet, I expect. Unsigned, as far as I know.',
+        ],
       },
       {
         id: 'J6',

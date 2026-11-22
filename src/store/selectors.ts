@@ -144,7 +144,9 @@ export function selectNextStep(state: GameState, caseData: Case001): NextStep | 
     }
   }
 
-  const archiveEvidence = caseData.digital.flatMap((r) => (r.yieldsEvidence ? [r.yieldsEvidence] : []))
+  // Red herrings (§9.14) are never required, so the guide does not wait for them
+  const herring = (id: string) => caseData.evidence.find((e) => e.id === id)?.relevance === 'red-herring'
+  const archiveEvidence = caseData.digital.flatMap((r) => (r.yieldsEvidence && !herring(r.yieldsEvidence) ? [r.yieldsEvidence] : []))
   const archiveLeft = archiveEvidence.filter((id) => !has(id)).length
   if (archiveLeft > 0) {
     return {

@@ -93,9 +93,22 @@ describe('forensics', () => {
     expect(traitKnown('T-RING', s)).toBe(true)
     expect(traitKnown('T-FORGER', s)).toBe(true)
     const m = suspectMatches(s)
-    expect(m.find((x) => x.id === 'julian')).toMatchObject({ matches: 6, known: 6, fits: true })
-    expect(m.find((x) => x.id === 'dorothea')?.fits).toBe(false)
+    // EV-08 also shows who could let themselves in (T-ACCESS), which Dorothea shares
+    expect(m.find((x) => x.id === 'julian')).toMatchObject({ matches: 7, known: 7, fits: true })
+    expect(m.find((x) => x.id === 'dorothea')).toMatchObject({ matches: 1, fits: false })
     expect(m.find((x) => x.id === 'margaret')?.matches).toBe(0)
+  })
+  it('keeps the early profile open: every suspect fits the first traits', () => {
+    const s = { ...state({ collectedEvidence: held(['EV-17']) }), contradictionsFlagged: ['CX-01'] }
+    expect(traitKnown('T-LIED', s)).toBe(true)
+    expect(traitKnown('T-GRUDGE', s)).toBe(true)
+    const m = suspectMatches(s)
+    expect(m.find((x) => x.id === 'julian')?.fits).toBe(true)
+    expect(m.find((x) => x.id === 'margaret')?.fits).toBe(true)
+    expect(m.find((x) => x.id === 'dorothea')?.fits).toBe(false)
+    // Only Julian fits every trait once the whole profile is known
+    const all = { ...state({ collectedEvidence: held(['EV-14', 'EV-10', 'EV-08', 'EV-17']), forensics: ['F-jigsaw', 'F-plate', 'F-uv'] }), contradictionsFlagged: ['CX-01'] }
+    expect(suspectMatches(all).filter((x) => x.fits).map((x) => x.id)).toEqual(['julian'])
   })
   it('only asks for evidence that exists', () => {
     const ids = new Set(CASE_001.evidence.map((e) => e.id))
