@@ -9,19 +9,19 @@ const SAVE = 'haunting-save-v1'
 const wait = (page: Page, s: number) => page.waitForTimeout(s * 1000)
 
 /** A lower-third caption, drawn over the page. */
-async function caption(page: Page, text: string, sub = '') {
-  await page.evaluate(([t, s]) => {
+async function caption(page: Page, text: string, sub = '', atTop = false) {
+  await page.evaluate(([t, s, top]) => {
     document.getElementById('demo-cap')?.remove()
     const el = document.createElement('div')
     el.id = 'demo-cap'
-    el.style.cssText = 'position:fixed;left:50%;bottom:36px;transform:translateX(-50%);z-index:99999;pointer-events:none;' +
+    el.style.cssText = 'position:fixed;left:50%;' + (top ? 'top:36px;' : 'bottom:36px;') + 'transform:translateX(-50%);z-index:99999;pointer-events:none;' +
       'background:rgba(10,8,12,0.86);border:1px solid #A58A60;border-radius:6px;padding:12px 26px;max-width:880px;text-align:center;' +
       'font-family:Georgia,serif;color:#EADFC9;box-shadow:0 10px 30px rgba(0,0,0,0.6);opacity:0;transition:opacity .4s'
     el.innerHTML = `<div style="font-size:24px;line-height:1.25">${t}</div>` +
       (s ? `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;color:#B9A98C;margin-top:4px">${s}</div>` : '')
     document.body.appendChild(el)
     requestAnimationFrame(() => { el.style.opacity = '1' })
-  }, [text, sub])
+  }, [text, sub, atTop] as const)
 }
 const clearCaption = (page: Page) => page.evaluate(() => document.getElementById('demo-cap')?.remove())
 
@@ -208,7 +208,7 @@ test('demo video', async ({ page }) => {
   await page.getByRole('button', { name: 'Go down to the cellar' }).click({ timeout: 30_000 })
   await wait(page, 2)
   await page.getByRole('button', { name: 'Answer the cellar phone' }).click({ timeout: 15_000 })
-  await caption(page, 'The entity remembers', 'How you treated her decides how the house falls quiet.')
+  await caption(page, 'The entity remembers', 'How you treated her decides how the house falls quiet.', true)
   await wait(page, 7)
   await clearCaption(page)
 
