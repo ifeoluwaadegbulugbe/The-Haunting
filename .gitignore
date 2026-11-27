@@ -29,3 +29,6 @@ audio-source/
 # Playwright output
 test-results/
 playwright-report/
+
+# rendered demo video (uploaded to YouTube, not committed)
+demo-video/
